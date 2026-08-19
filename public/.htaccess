@@ -7,9 +7,15 @@
 # (Netlify, Cloudflare Pages, Vercel) ignore this file harmlessly.
 
 # Let the rules below decide what to serve, not Apache's content negotiation.
-Options -MultiViews
+Options -MultiViews -Indexes
 
 DirectoryIndex index.html
+
+# Next 16 writes an RSC payload directory beside every page (out/about.html and
+# out/about/__next._index.txt), so almost every route also exists as a directory.
+# Without this, mod_dir would 301 "/about" to "/about/" and break the
+# extensionless canonicals the whole site is built on.
+DirectorySlash Off
 
 <IfModule mod_rewrite.c>
   RewriteEngine On
@@ -24,9 +30,19 @@ DirectoryIndex index.html
   RewriteCond %{THE_REQUEST} \s/+(.+?)\.html[\s?] [NC]
   RewriteRule ^ /%1 [R=301,L]
 
-  # Serve /about from about.html, /products/foo from products/foo.html.
+  # Page 1 of the blog is /blog, not /blog/page/1 — keep the one URL canonical.
+  RewriteRule ^blog/page/1/?$ /blog [R=301,L]
+
+  # Serve /about from about.html, /products/foo from products/foo.html and
+  # /electrolux-commercial-washer-malaysia from its post file at the root.
+  #
+  # There is deliberately no `!-d` guard here: Next 16 emits an RSC payload
+  # directory with the same name as every page, so `!-d` would skip the rewrite
+  # for the entire site and leave Apache looking for a DirectoryIndex that those
+  # directories do not contain. The `.html` sibling is what decides it. Real
+  # files — /_next/static/*, /images/*, the .txt payloads — are caught by `!-f`
+  # above and served untouched.
   RewriteCond %{REQUEST_FILENAME} !-f
-  RewriteCond %{REQUEST_FILENAME} !-d
   RewriteCond %{REQUEST_FILENAME}.html -f
   RewriteRule ^(.+?)/?$ $1.html [L]
 </IfModule>

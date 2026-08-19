@@ -11,7 +11,12 @@ export default function JsonLd({ schemas }) {
         <script
           key={i}
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+          // JSON.stringify does not escape `<`, so a "</script>" inside any
+          // string would close this tag early. Blog schema carries WordPress
+          // copy, so escape it to its unicode form as Next.js recommends.
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(schema).replace(/</g, "\\u003c"),
+          }}
         />
       ))}
     </>

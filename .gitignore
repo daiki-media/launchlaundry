@@ -16,6 +16,7 @@
 # next.js
 /.next/
 /out/
+/out.zip
 
 # production
 /build
@@ -45,5 +46,10 @@ next-env.d.ts
 *.md
 
 
-/u767415935_aVLqz.sql
+/databace-backup.sql
 /uploads
+
+# WordPress media staged for re-upload to blog.launchlaundry.com.my.
+# Generated, large, and not part of the site build.
+/.upload-to-live
+/project.zip

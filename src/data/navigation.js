@@ -8,9 +8,9 @@
 //   columns: [{ heading, items: [{ label, href, description }] }]
 //   promo:   { title, text, cta: { label, href } }
 //
-// NOTE: "/laundromat-business" and "/blog" from `nav` in src/data/home.js are
-// intentionally absent — neither route exists yet, so they would 404. Add them
-// back here once the pages ship.
+// NOTE: "/laundromat-business" from `nav` in src/data/home.js is intentionally
+// absent — that route does not exist yet, so it would 404. Add it back here
+// once the page ships. "/blog" now exists (src/app/blog) and is listed below.
 
 import { services } from "./services";
 import { products } from "./products";
@@ -100,6 +100,9 @@ export const mainNav = [
     },
   },
   { label: "Case Study", href: "/case-study", match: ["/case-study"] },
+  // Posts are served from the site root (/<slug>), so the Blog item stays
+  // active on an article too — see src/app/[slug]/page.js.
+  { label: "Blog", href: "/blog", match: ["/blog"] },
   { label: "Contact", href: "/contact-us", match: ["/contact-us"] },
 ];
 

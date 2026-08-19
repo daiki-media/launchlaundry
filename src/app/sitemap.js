@@ -2,6 +2,7 @@ import { SITE_URL } from "@/components/seo/JsonLd";
 import { productPages } from "@/data/products";
 import { locationPages } from "@/data/locations";
 import { servicePages } from "@/data/services";
+import { getAllPosts, getPageCount, blogPagePath, postPath } from "@/lib/blog";
 
 // Required by output: "export" — this metadata route is generated once at
 // build time and written into ./out as a plain file.
@@ -16,10 +17,11 @@ const routes = [
   { path: "/location", priority: 0.8, changeFrequency: "monthly" },
   { path: "/contact-us", priority: 0.8, changeFrequency: "yearly" },
   { path: "/case-study", priority: 0.7, changeFrequency: "monthly" },
+  { path: "/blog", priority: 0.9, changeFrequency: "weekly" },
   { path: "/privacy-policy", priority: 0.3, changeFrequency: "yearly" },
 ];
 
-export default function sitemap() {
+export default async function sitemap() {
   const lastModified = new Date();
 
   const productRoutes = Object.keys(productPages).map((slug) => ({
@@ -40,10 +42,36 @@ export default function sitemap() {
     changeFrequency: "monthly",
   }));
 
-  return [...routes, ...productRoutes, ...locationRoutes, ...serviceRoutes].map((route) => ({
+  // Blog listing pages 2..N. Page 1 is already in `routes` as /blog.
+  const totalPages = await getPageCount();
+  const blogPageRoutes = Array.from({ length: Math.max(0, totalPages - 1) }, (_, i) => ({
+    path: blogPagePath(i + 2),
+    priority: 0.4,
+    changeFrequency: "weekly",
+  }));
+
+  const staticRoutes = [
+    ...routes,
+    ...productRoutes,
+    ...locationRoutes,
+    ...serviceRoutes,
+    ...blogPageRoutes,
+  ].map((route) => ({
     url: `${SITE_URL}${route.path === "/" ? "" : route.path}`,
     lastModified,
     changeFrequency: route.changeFrequency,
     priority: route.priority,
   }));
+
+  // Every post, with the real modified date from WordPress so crawlers can tell
+  // what actually changed between builds.
+  const posts = await getAllPosts();
+  const postRoutes = posts.map((post) => ({
+    url: `${SITE_URL}${postPath(post.slug)}`,
+    lastModified: new Date(post.modified || post.date),
+    changeFrequency: "monthly",
+    priority: 0.7,
+  }));
+
+  return [...staticRoutes, ...postRoutes];
 }
