@@ -2,9 +2,10 @@
 //
 // Wording is adapted from the standard WordPress privacy template, but the facts
 // describe what THIS site actually does: one contact form (see
-// src/app/api/contact/route.js), no comments, no user accounts, no analytics or
-// advertising cookies, no third-party embeds. If any of that changes, update the
-// matching section below and bump `lastUpdated`.
+// src/components/contact/ContactForm.jsx, which posts straight to the external
+// endpoint in NEXT_PUBLIC_CONTACT_ENDPOINT), no comments, no user accounts, no
+// analytics or advertising cookies, no third-party embeds. If any of that
+// changes, update the matching section below and bump `lastUpdated`.
 
 export const privacyMeta = {
   title: "Privacy Policy | Launch Laundry",

@@ -3,6 +3,10 @@ import { productPages } from "@/data/products";
 import { locationPages } from "@/data/locations";
 import { servicePages } from "@/data/services";
 
+// Required by output: "export" — this metadata route is generated once at
+// build time and written into ./out as a plain file.
+export const dynamic = "force-static";
+
 // Add new routes here as each page is built.
 const routes = [
   { path: "/", priority: 1.0, changeFrequency: "weekly" },
