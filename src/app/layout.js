@@ -18,13 +18,6 @@ export const metadata = {
   description:
     "Starting a laundromat or upgrading your laundry business? Launch Laundry supplies commercial washers, dryers & spare parts across Malaysia, with full setup support.",
   alternates: { canonical: "/" },
-  icons: {
-    icon: [
-      { url: "/images/favicon-32.png", sizes: "32x32", type: "image/png" },
-      { url: "/images/favicon-192.png", sizes: "192x192", type: "image/png" },
-    ],
-    apple: "/images/favicon-192.png",
-  },
   openGraph: {
     type: "website",
     locale: "en_MY",
@@ -37,7 +30,6 @@ export const metadata = {
   },
 };
 
-// Site-wide schema. Page-level schema references these by @id.
 const websiteSchema = {
   "@context": "https://schema.org",
   "@type": "WebSite",

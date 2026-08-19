@@ -42,3 +42,7 @@ next-env.d.ts
 
 # markdown
 *.md
+
+
+/u767415935_aVLqz.sql
+/uploads
