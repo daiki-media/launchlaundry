@@ -150,45 +150,6 @@ body[data-nav-open="true"] .whatsapp-fab {
   padding-left: 1.25rem;
 }
 
-/* Spec tables are wrapped in .wp-table by src/lib/wpHtml.js so wide ones scroll
-   instead of stretching the page on a phone. */
-.post-body .wp-table {
-  -webkit-overflow-scrolling: touch;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.75rem;
-  overflow-x: auto;
-}
-
-.post-body table {
-  border-collapse: collapse;
-  font-size: 0.9rem;
-  min-width: 32rem;
-  width: 100%;
-}
-
-.post-body th,
-.post-body td {
-  border-bottom: 1px solid #e2e8f0;
-  padding: 0.75rem 1rem;
-  text-align: left;
-  vertical-align: top;
-}
-
-.post-body tr:first-child td,
-.post-body thead th {
-  background: #f8fafc;
-  color: var(--color-navy);
-  font-weight: 600;
-}
-
-.post-body tr:last-child td {
-  border-bottom: 0;
-}
-
-.post-body table p {
-  margin: 0;
-}
-
 .post-body iframe,
 .post-body video {
   aspect-ratio: 16 / 9;
@@ -196,4 +157,229 @@ body[data-nav-open="true"] .whatsapp-fab {
   height: auto;
   max-width: 100%;
   width: 100%;
+}
+
+/* ---------------------------------------------------------------------------
+   Data tables.
+
+   Shared by two sources: the WordPress tables inside blog posts, which
+   src/lib/wpHtml.js tags with `.data-table` and stamps a `data-label` onto
+   every cell, and the hand-built SpecTable on product pages.
+
+   Written mobile-first. On a phone each row IS a card — the header row is
+   hidden and every cell prints its own column name — so a five-column spec
+   table stays readable with no horizontal scrollbar. From 768px up the same
+   markup reverts to a real table.
+
+   Modifiers set by wpHtml.js:
+     .data-table--head-first  header row sits in <tbody>, not <thead>
+     .data-table--plain       single column: a list, so no card treatment
+   --------------------------------------------------------------------------- */
+
+.data-table-wrap {
+  /* Block-only so a Tailwind `mx-auto` on the same element still centres it. */
+  margin-block: 2rem;
+}
+
+.data-table {
+  font-size: 0.9rem;
+  width: 100%;
+}
+
+.data-table caption {
+  caption-side: top;
+  color: var(--color-navy-soft);
+  font-size: 0.8125rem;
+  margin-bottom: 0.75rem;
+  text-align: left;
+}
+
+/* Cells hold <p> wrappers from the block editor. */
+.data-table p {
+  margin: 0;
+}
+
+.data-table p + p {
+  margin-top: 0.5rem;
+}
+
+/* --- phones: one card per row ------------------------------------------- */
+
+.data-table,
+.data-table thead,
+.data-table tbody,
+.data-table tr,
+.data-table th,
+.data-table td {
+  display: block;
+}
+
+/* The column names are reprinted on each cell, so the header row is redundant.
+   It stays in the DOM for assistive tech and for search engines. */
+.data-table thead,
+.data-table--head-first tbody tr:first-child {
+  height: 0;
+  overflow: hidden;
+  position: absolute;
+  visibility: hidden;
+  width: 0;
+}
+
+.data-table tr {
+  background: #fff;
+  border: 1px solid #e7e5f0;
+  border-radius: 0.875rem;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+  margin-bottom: 0.875rem;
+  overflow: hidden;
+}
+
+.data-table td {
+  border-top: 1px solid #f1f5f9;
+  padding: 0.7rem 1rem 0.8rem;
+}
+
+.data-table td::before {
+  color: var(--color-brand);
+  content: attr(data-label);
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.2rem;
+  text-transform: uppercase;
+}
+
+/* A cell with no column name should not print an empty label line. */
+.data-table td:not([data-label])::before,
+.data-table td[data-label=""]::before {
+  content: none;
+}
+
+/* The first cell reads as the card's title. */
+.data-table tbody td:first-child {
+  background: linear-gradient(180deg, #f7f5ff 0%, #f4f1fe 100%);
+  border-top: 0;
+  color: var(--color-navy);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.data-table tbody td:first-child::before {
+  content: none;
+}
+
+/* Single-column tables are just lists — no card chrome. */
+.data-table--plain tr {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  margin-bottom: 0;
+}
+
+.data-table--plain tbody td:first-child {
+  background: none;
+  border-top: 1px solid #f1f5f9;
+  font-weight: 400;
+}
+
+/* --- 768px and up: a real table ----------------------------------------- */
+
+@media (min-width: 768px) {
+  .data-table-wrap {
+    background: #fff;
+    border: 1px solid #e7e5f0;
+    border-radius: 0.875rem;
+    box-shadow: 0 1px 3px rgba(16, 24, 40, 0.06);
+    /* `auto`, not `hidden`: it still clips to the radius, but if a cell ever
+       does overflow (a wide image, say) it stays reachable instead of being
+       silently cut off. Text cannot trigger it — see word-break below. */
+    overflow: auto;
+  }
+
+  .data-table {
+    border-collapse: collapse;
+    display: table;
+    /* Auto layout, so a short "Part" column does not claim the same width as a
+       long "Maintenance Focus" one. */
+    table-layout: auto;
+  }
+
+  .data-table thead {
+    display: table-header-group;
+  }
+
+  .data-table tbody {
+    display: table-row-group;
+  }
+
+  .data-table thead,
+  .data-table--head-first tbody tr:first-child {
+    height: auto;
+    overflow: visible;
+    position: static;
+    visibility: visible;
+    width: auto;
+  }
+
+  .data-table tr {
+    background: none;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    display: table-row;
+    margin: 0;
+    overflow: visible;
+  }
+
+  .data-table th,
+  .data-table td {
+    display: table-cell;
+    padding: 0.85rem 1.1rem;
+    text-align: left;
+    vertical-align: top;
+    word-break: break-word;
+  }
+
+  .data-table td::before {
+    content: none;
+  }
+
+  .data-table th {
+    background: linear-gradient(180deg, #f7f5ff 0%, #f1edfd 100%);
+    border-bottom: 1px solid #e4dffa;
+    color: var(--color-navy);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .data-table tbody td {
+    border-top: 1px solid #f1f5f9;
+  }
+
+  /* The promoted header row carries <th> cells, so it needs no top border. */
+  .data-table tbody tr:first-child td {
+    border-top: 0;
+  }
+
+  .data-table tbody td:first-child {
+    background: none;
+    color: var(--color-navy);
+    font-size: inherit;
+    font-weight: 600;
+  }
+
+  .data-table tbody tr:nth-child(even) td {
+    background: #fbfaff;
+  }
+
+  .data-table tbody tr:hover td {
+    background: #f6f3ff;
+  }
+
+  .data-table--plain tbody td:first-child {
+    border-top: 1px solid #f1f5f9;
+  }
 }

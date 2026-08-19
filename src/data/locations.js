@@ -13,7 +13,8 @@ const IMG = "/images/locations";
 export const locationsMeta = {
   // Yoast stored no title for this page on the live site (WordPress fell back to
   // the bare post title), so this one is written to be descriptive.
-  title: "Our Locations — Laundromat Business Support Across Malaysia | Launch Laundry",
+  // Kept under ~70 characters so Google shows it whole rather than truncating.
+  title: "Laundromat Business Support Across Malaysia | Launch Laundry",
   description:
     "Professional site-selection expertise for laundromats in Malaysia — tailored demographic analysis, foot-traffic insights & high-ROI location planning.",
 };

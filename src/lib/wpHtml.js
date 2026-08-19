@@ -125,6 +125,71 @@ export function internalPath(href) {
 }
 
 /**
+ * Prepare one WordPress table for the shared `.data-table` styling.
+ *
+ * On a phone the CSS drops the header row and lays each body row out as a card,
+ * which needs every cell to carry its column name — so this stamps a
+ * `data-label` onto each `<td>` at build time. Two header shapes appear in the
+ * archive: a real `<thead>`/`<th>` (most posts) and a first row of bolded
+ * `<td>`s (the rest), which is promoted to `<th scope="col">` here.
+ *
+ * The table's own structure is left alone — cells are edited in place rather
+ * than rebuilt, so nothing else in the markup can be lost.
+ */
+function enhanceTable(table) {
+  const CELL = /<(t[dh])\b([^>]*)>([\s\S]*?)<\/\1>/gi;
+  const rows = table.match(/<tr\b[^>]*>[\s\S]*?<\/tr>/gi) || [];
+  if (!rows.length) return `<div class="data-table-wrap">${table}</div>`;
+
+  const firstCells = [...rows[0].matchAll(CELL)];
+  const columns = firstCells.length;
+
+  const alreadyHeader = firstCells.every((c) => c[1].toLowerCase() === "th");
+  // A row of bolded cells is a header the editor never marked up as one.
+  const boldHeader =
+    !alreadyHeader &&
+    firstCells.length > 1 &&
+    firstCells.every((c) => !stripTags(c[3]) || /<(b|strong)\b/i.test(c[3]));
+
+  const isHeader = alreadyHeader || boldHeader;
+  const labels = isHeader ? firstCells.map((c) => stripTags(c[3])) : [];
+
+  let rowIndex = 0;
+  let out = table.replace(/<tr\b([^>]*)>([\s\S]*?)<\/tr>/gi, (match, trAttrs, inner) => {
+    const headerRow = isHeader && rowIndex === 0;
+    rowIndex += 1;
+
+    let cellIndex = 0;
+    const body = inner.replace(CELL, (cellMatch, tag, attrs, content) => {
+      const index = cellIndex++;
+      const clean = attrs.replace(/\s*(?:data-label|scope)="[^"]*"/gi, "");
+
+      if (headerRow) return `<th${clean} scope="col">${content}</th>`;
+      if (!labels.length || tag.toLowerCase() === "th") return cellMatch;
+
+      return `<td${clean} data-label="${escapeAttribute(labels[index] || "")}">${content}</td>`;
+    });
+
+    return `<tr${trAttrs}>${body}</tr>`;
+  });
+
+  const classes = ["data-table"];
+  // The promoted header sits in <tbody>, so the CSS needs telling which row to
+  // hide on mobile.
+  if (boldHeader) classes.push("data-table--head-first");
+  // A single column is a list, not a grid — it gets no card treatment.
+  if (columns < 2) classes.push("data-table--plain");
+
+  out = out.replace(/^<table\b([^>]*)>/i, (match, attrs) => {
+    const existing = attrs.match(/\sclass="([^"]*)"/i)?.[1] || "";
+    const rest = attrs.replace(/\s*class="[^"]*"/i, "");
+    return `<table${rest} class="${[...classes, existing].filter(Boolean).join(" ")}">`;
+  });
+
+  return `<div class="data-table-wrap">${out}</div>`;
+}
+
+/**
  * Clean up a post body for rendering on this site.
  *
  * Returns the rewritten HTML plus the h2/h3 outline used by the table of
@@ -188,11 +253,9 @@ export function transformContent(html, resolvePath = (path) => path) {
     return `<img ${next.trim()} />`;
   });
 
-  // 7. Wide spec tables need to scroll rather than stretch the page on mobile.
-  out = out.replace(
-    /<table\b[\s\S]*?<\/table>/gi,
-    (table) => `<div class="wp-table">${table}</div>`
-  );
+  // 7. Give every table the shared `.data-table` treatment (see globals.css),
+  //    which turns each row into a card on narrow screens.
+  out = out.replace(/<table\b[\s\S]*?<\/table>/gi, (table) => enhanceTable(table));
 
   // 8. Anchor every h2/h3 so the table of contents can link into the article.
   const headings = [];

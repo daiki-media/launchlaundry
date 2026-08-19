@@ -7,18 +7,17 @@ export default function SpecTable({ section }) {
         <h2 className="text-2xl font-extrabold tracking-tight text-navy sm:text-3xl">{heading}</h2>
         {caption && <p className="mt-2 max-w-xl text-sm text-body">{caption}</p>}
 
-        {/* Wide tables scroll inside their own container rather than the page. */}
-        <div className="mt-6 overflow-x-auto">
-          <table className="mx-auto w-full min-w-[520px] max-w-3xl border-collapse text-sm">
+        {/* `.data-table` is the shared treatment defined in globals.css: a real
+            table on desktop, one card per row on phones. Each cell carries its
+            column name in data-label so the card view can print it — which is
+            why a wide spec sheet needs no horizontal scrollbar. */}
+        <div className="data-table-wrap mx-auto max-w-3xl">
+          <table className="data-table">
             {columns && (
               <thead>
-                <tr className="bg-slate-100">
+                <tr>
                   {columns.map((col) => (
-                    <th
-                      key={col}
-                      scope="col"
-                      className="border-2 border-slate-700 px-3 py-3 text-center font-bold text-navy"
-                    >
+                    <th key={col} scope="col">
                       {col}
                     </th>
                   ))}
@@ -26,15 +25,10 @@ export default function SpecTable({ section }) {
               </thead>
             )}
             <tbody>
-              {rows.map((row, i) => (
-                <tr key={row[0]} className={i % 2 ? "bg-slate-50" : undefined}>
+              {rows.map((row) => (
+                <tr key={row[0]}>
                   {row.map((cell, j) => (
-                    <td
-                      key={`${row[0]}-${j}`}
-                      className={`border border-slate-700 px-3 py-3 text-center ${
-                        j === 0 ? "font-bold text-navy" : "text-body"
-                      }`}
-                    >
+                    <td key={`${row[0]}-${j}`} data-label={columns?.[j] ?? ""}>
                       {cell}
                     </td>
                   ))}

@@ -52,50 +52,26 @@ function Table({ block, tinted }) {
           {block.heading}
         </h2>
 
-        {/* Cards on phones, a real table from sm up — the wide grid never forces
-            the page to scroll sideways. */}
-        <div className="mt-8 space-y-4 sm:hidden">
-          {block.rows.map((row) => (
-            <div key={row[0]} className="rounded-xl border border-slate-200 bg-white p-4">
-              {row.map((cell, j) => (
-                <div key={j} className="flex gap-3 border-b border-slate-100 py-2 last:border-0">
-                  <span className="w-28 shrink-0 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    {block.columns[j]}
-                  </span>
-                  <span className={`text-sm ${j === 0 ? "font-semibold text-navy" : "text-body"}`}>
-                    {cell}
-                  </span>
-                </div>
-              ))}
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-8 hidden overflow-x-auto sm:block">
-          <table className="w-full border-collapse text-sm">
+        {/* One table for every width. `.data-table` in globals.css renders it
+            as a real table on desktop and as one card per row on phones, using
+            the data-label on each cell — so this no longer needs a second copy
+            of the same content in the markup. */}
+        <div className="data-table-wrap mx-auto max-w-4xl">
+          <table className="data-table">
             <thead>
-              <tr className="bg-slate-100">
+              <tr>
                 {block.columns.map((col) => (
-                  <th
-                    key={col}
-                    scope="col"
-                    className="border border-slate-200 px-3 py-3 text-left font-semibold text-navy"
-                  >
+                  <th key={col} scope="col">
                     {col}
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {block.rows.map((row, i) => (
-                <tr key={row[0]} className={i % 2 ? "bg-slate-50/70" : undefined}>
+              {block.rows.map((row) => (
+                <tr key={row[0]}>
                   {row.map((cell, j) => (
-                    <td
-                      key={j}
-                      className={`border border-slate-200 px-3 py-3 align-top ${
-                        j === 0 ? "font-semibold text-navy" : "text-body"
-                      }`}
-                    >
+                    <td key={j} data-label={block.columns[j] ?? ""}>
                       {cell}
                     </td>
                   ))}
