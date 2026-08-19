@@ -12,6 +12,7 @@ const routes = [
   { path: "/location", priority: 0.8, changeFrequency: "monthly" },
   { path: "/contact-us", priority: 0.8, changeFrequency: "yearly" },
   { path: "/case-study", priority: 0.7, changeFrequency: "monthly" },
+  { path: "/privacy-policy", priority: 0.3, changeFrequency: "yearly" },
 ];
 
 export default function sitemap() {
