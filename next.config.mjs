@@ -1,3 +1,5 @@
+import { REDIRECTS } from "./redirects.js";
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Static export: `next build` writes a self-contained site to ./out for
@@ -15,6 +17,12 @@ const nextConfig = {
 
   images: {
     unoptimized: true,
+  },
+
+  // `output: "export"` drops these from the build — they only run under
+  // `next dev`. Production 301s come from public/.htaccess.
+  async redirects() {
+    return REDIRECTS.map((redirect) => ({ ...redirect, permanent: true }));
   },
 };
 
