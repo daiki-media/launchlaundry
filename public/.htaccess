@@ -33,6 +33,54 @@ DirectorySlash Off
   # Page 1 of the blog is /blog, not /blog/page/1 — keep the one URL canonical.
   RewriteRule ^blog/page/1/?$ /blog [R=301,L]
 
+  # ---------------------------------------------------------------------------
+  # 301s for slugs that changed during the 2026 content rewrite.
+  #
+  # Every pair below was read out of the WordPress dump (wp_postmeta
+  # `_wp_old_slug`, plus the Redirection plugin's wp_redirection_items). The old
+  # permalinks were live and linked, and the static export has no page at them,
+  # so without these they 404 and drop whatever authority they had earned.
+  #
+  # `output: "export"` in next.config.mjs rules out next.config `redirects()` —
+  # there is no server at runtime — so the rules live here. Targets are
+  # extensionless to match the canonicals; `/?$` catches the trailing-slash form
+  # WordPress used to emit.
+  #
+  # Deliberately NOT redirected: /local-seo-for-coin-laundry-rank-on-google-maps-faster
+  # is an old slug in the dump, but a different published post uses it today.
+  # ---------------------------------------------------------------------------
+
+  # Rewritten posts (weak-content audit, July 2026).
+  RewriteRule ^do-your-business-with-expert-digital-solutions/?$ /laundromat-business-malaysia-2026 [R=301,L]
+  RewriteRule ^professional-web-design-for-modern-businesses/?$ /commercial-laundry-equipment-setup-malaysia-2026 [R=301,L]
+  RewriteRule ^reduce-costs-with-commercial-laundry-tools/?$ /reduce-commercial-laundry-costs-malaysia-2026 [R=301,L]
+  RewriteRule ^huebsch-dryer-parts-buying-guide-extend-the-life-of-your-dryer/?$ /huebsch-dryer-parts-malaysia-2026 [R=301,L]
+  RewriteRule ^top-5-replacement-parts-that-keep-your-laundry-machines-running-smoothly/?$ /laundry-machine-replacement-parts-malaysia-2026 [R=301,L]
+  RewriteRule ^how-to-choose-the-right-coin-laundry-machine-spare-parts-for-maximum-performance/?$ /coin-laundry-machine-spare-parts-malaysia-2026 [R=301,L]
+  RewriteRule ^top-10-commercial-laundry-service-tools-parts-for-efficient-operations(-2)?/?$ /commercial-laundry-tools-parts-malaysia-2026 [R=301,L]
+  RewriteRule ^electrolux-washer-spare-parts-maintenance-guide-for-long-lasting-performance/?$ /electrolux-laundry-equipment-price-malaysia-2026 [R=301,L]
+
+  # Rewritten location pages. /location/sabah and /location/sarawak were never
+  # separate pages; both states are covered by the one East Malaysia page.
+  RewriteRule ^location/melaka/?$ /location/laundromat-business-melaka-malaysia-2026 [R=301,L]
+  RewriteRule ^location/(sabah-sarawak|sabah|sarawak)/?$ /location/laundromat-business-sabah-sarawak-2026 [R=301,L]
+
+  # Earlier slug changes found in the same dump — same 404 problem, same fix.
+  # The "-html" suffix on some targets is what WordPress actually publishes today.
+  RewriteRule ^top-huebsch-dryer-parts-every-laundry-business-should-keep-in-stock/?$ /top-huebsch-dryer-parts-every-laundry-business-should-keep-in-stock-html [R=301,L]
+  RewriteRule ^speed-queen-commercial-laundry-machines-why-theyre-malaysias-top-choice/?$ /speed-queen-commercial-laundry-machines-why-they-are-malaysias-top-choice-html [R=301,L]
+  RewriteRule ^how-to-choose-reliable-coin-laundry-machine-spare-parts-in-malaysia/?$ /how-to-choose-reliable-coin-laundry-machine-spare-parts-in-malaysia-html [R=301,L]
+  RewriteRule ^industrial-washing-machine-parts-guide-maintenance-tips-for-longevity/?$ /industrial-washing-machine-parts-guide-maintenance-tips-for-longevity-html [R=301,L]
+  RewriteRule ^where-to-find-genuine-commercial-laundry-machine-spare-parts-in-malaysia/?$ /where-to-find-genuine-commercial-laundry-machine-spare-parts-in-malaysia-html [R=301,L]
+  RewriteRule ^alliance-laundry-systems-malaysia-trusted-solutions-for-large-scale-laundromats/?$ /alliance-laundry-systems-malaysia-trusted-slutions-for-large-scale-laundromats [R=301,L]
+  RewriteRule ^behind-the-scenes-how-we-source-genuine-commercial-laundry-spare-parts-2/?$ /genuine-commercial-laundry-spare-parts-in-malaysia-our-sourcing-process [R=301,L]
+  RewriteRule ^commercial-washing-machine-malaysia-price-guide-realistic-ranges/?$ /commercial-washing-machine-malaysia-price-realistic-range-guide [R=301,L]
+  RewriteRule ^how-much-capital-do-you-need-to-open-a-laundromat-in-malaysia/?$ /how-much-capital-to-open-a-laundromat-in-malaysia [R=301,L]
+  RewriteRule ^services/business-promotion-and-branding-for-laundromats(-2)?/?$ /services/business-promotion-and-branding-for-laundromat [R=301,L]
+
+  # Legacy staging page, kept because the Redirection plugin still serves it.
+  RewriteRule ^contact-2/?$ /contact-us [R=301,L]
+
   # Serve /about from about.html, /products/foo from products/foo.html and
   # /electrolux-commercial-washer-malaysia from its post file at the root.
   #

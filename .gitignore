@@ -45,11 +45,4 @@ next-env.d.ts
 # markdown
 *.md
 
-
-/databace-backup.sql
-/uploads
-
-# WordPress media staged for re-upload to blog.launchlaundry.com.my.
-# Generated, large, and not part of the site build.
 /.upload-to-live
-/project.zip

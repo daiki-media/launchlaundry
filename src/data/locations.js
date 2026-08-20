@@ -547,9 +547,9 @@ export const locationPages = {
   "laundromat-business-melaka-malaysia-2026": {
     name: "Laundromat Business in Melaka",
     meta: {
-      title: "Laundromat Business in Melaka, Malaysia — 2026 Guide",
+      title: "Start a Laundromat Business in Melaka, Malaysia 2026 Guide",
       description:
-        "How to start a laundromat business in Melaka: the three customer types, the best areas to open, seasonal tourism demand, and the mistakes to avoid.",
+        "Planning a laundromat in Melaka? Explore 2026 setup costs, equipment options, location factors and practical insights for Melaka’s tourism and local market.",
     },
     image: `${IMG}/alliance-commercial-machines.png`,
     blocks: [
@@ -736,7 +736,7 @@ export const locationPages = {
     meta: {
       title: "Laundromat Business Setup in Sabah & Sarawak, Malaysia 2026",
       description:
-        "Setting up a laundromat in East Malaysia: why Sabah and Sarawak are separate markets, the key cities, customer bases, logistics, and mistakes to avoid.",
+        "Planning a laundromat in Sabah or Sarawak? Explore equipment choices, setup costs, logistics and key factors for starting a laundry business in East Malaysia.",
     },
     image: `${IMG}/speed-queen-machines.png`,
     blocks: [
