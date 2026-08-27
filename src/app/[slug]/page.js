@@ -16,10 +16,9 @@ import { formatDate, getPost, getPostSlugs, getRelatedPosts, postPath } from "@/
  * and rankings pointing at blog.launchlaundry.com.my carry over once that host
  * redirects here.
  *
- * This is the site's catch-all route, but it never shadows a real page: static
- * segments (/about, /products, …) win over a dynamic one in the App Router, and
- * generateStaticParams only ever emits CMS post slugs. src/lib/blog.js also
- * refuses any post slug that collides with an existing route.
+ * The site's catch-all route, but it never shadows a real page: static segments
+ * win over a dynamic one in the App Router, and src/lib/blog.js refuses any post
+ * slug that collides with an existing route.
  */
 export const dynamicParams = false;
 

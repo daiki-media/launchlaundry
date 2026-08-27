@@ -1,15 +1,10 @@
 /**
- * HTML helpers for the CMS content that powers the blog.
+ * HTML helpers for the CMS content that powers the blog. The filename is
+ * historical — the archive was written in WordPress and migrated across, so the
+ * markup is unchanged: entities to decode, cross-domain links to pull onto this
+ * site, empty headings to drop, anchors to add for the table of contents.
  *
- * The filename is historical: the archive was written in WordPress and has been
- * migrated into our Laravel CMS, which serves the same editor markup as
- * `content`. It still needs the same cleaning up before it can go on
- * launchlaundry.com.my — entities decoded for metadata, cross-domain links
- * pulled back onto this site, empty headings dropped and anchors added so the
- * table of contents has something to point at.
- *
- * Everything here is plain string work on purpose. It runs at build time only
- * (see src/lib/blog.js), so there is no runtime cost and no parser dependency.
+ * Plain string work on purpose. Build time only, so no parser dependency.
  */
 
 const NAMED_ENTITIES = {
