@@ -12,13 +12,13 @@ import { formatDate, getPost, getPostSlugs, getRelatedPosts, postPath } from "@/
 /**
  * A blog post, served from the site root — /electrolux-laundry-equipment-price-malaysia-2026.
  *
- * The permalinks match the ones the WordPress subdomain already publishes, so
- * links and rankings pointing at blog.launchlaundry.com.my carry over once that
- * host redirects here.
+ * The permalinks match the ones the blog subdomain used to publish, so links
+ * and rankings pointing at blog.launchlaundry.com.my carry over once that host
+ * redirects here.
  *
  * This is the site's catch-all route, but it never shadows a real page: static
  * segments (/about, /products, …) win over a dynamic one in the App Router, and
- * generateStaticParams only ever emits WordPress slugs. src/lib/blog.js also
+ * generateStaticParams only ever emits CMS post slugs. src/lib/blog.js also
  * refuses any post slug that collides with an existing route.
  */
 export const dynamicParams = false;
@@ -39,8 +39,8 @@ export async function generateMetadata({ params }) {
   return {
     title: post.metaTitle,
     description: post.metaDescription,
-    // Canonical points here, not at the WordPress original — this is the
-    // version we want indexed.
+    // Canonical points here, not at the CMS copy — this is the version we
+    // want indexed.
     alternates: { canonical: postPath(slug) },
     authors: [{ name: post.author }],
     openGraph: {

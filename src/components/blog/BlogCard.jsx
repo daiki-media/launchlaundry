@@ -15,7 +15,7 @@ export default function BlogCard({ post, priority = false }) {
     <article className="group relative flex h-full flex-col overflow-hidden rounded-2xl bg-white shadow-[0_1px_3px_rgba(16,24,40,.06)] ring-1 ring-slate-200/70 transition hover:-translate-y-1 hover:shadow-lg">
       <div className="aspect-[16/10] overflow-hidden bg-slate-100">
         {post.image ? (
-          // Plain <img> on purpose: these are remote WordPress uploads of
+          // Plain <img> on purpose: these are remote CMS uploads of
           // unknown dimensions, and next.config.mjs sets images.unoptimized
           // for the static export, so next/image would add the width/height
           // requirement without optimising anything.

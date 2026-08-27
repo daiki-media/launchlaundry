@@ -1,11 +1,12 @@
 /**
- * HTML helpers for the WordPress content that powers the blog.
+ * HTML helpers for the CMS content that powers the blog.
  *
- * WordPress hands us `content.rendered` — markup written by editors and by the
- * block editor, aimed at the blog subdomain. Before it can go on
- * launchlaundry.com.my it needs cleaning up: entities decoded for metadata,
- * cross-domain links pulled back onto this site, empty headings dropped and
- * anchors added so the table of contents has something to point at.
+ * The filename is historical: the archive was written in WordPress and has been
+ * migrated into our Laravel CMS, which serves the same editor markup as
+ * `content`. It still needs the same cleaning up before it can go on
+ * launchlaundry.com.my — entities decoded for metadata, cross-domain links
+ * pulled back onto this site, empty headings dropped and anchors added so the
+ * table of contents has something to point at.
  *
  * Everything here is plain string work on purpose. It runs at build time only
  * (see src/lib/blog.js), so there is no runtime cost and no parser dependency.
@@ -43,7 +44,7 @@ const NAMED_ENTITIES = {
 
 /**
  * Turn `&#038;`, `&amp;` and friends into real characters.
- * WordPress double-encodes some titles, so run the pass twice to settle.
+ * Some migrated titles are double-encoded, so run the pass twice to settle.
  */
 export function decodeEntities(input) {
   if (!input) return "";
@@ -125,7 +126,7 @@ export function internalPath(href) {
 }
 
 /**
- * Prepare one WordPress table for the shared `.data-table` styling.
+ * Prepare one post table for the shared `.data-table` styling.
  *
  * On a phone the CSS drops the header row and lays each body row out as a card,
  * which needs every cell to carry its column name — so this stamps a
@@ -327,7 +328,7 @@ export function extractFaqs(html) {
   return faqs.slice(0, 12);
 }
 
-/** Rounded reading time in minutes, at the 200 wpm Yoast reports against. */
+/** Rounded reading time in minutes, at the usual 200 wpm reading speed. */
 export function readingTime(html) {
   const words = stripTags(html).split(/\s+/).filter(Boolean).length;
   return { words, minutes: Math.max(1, Math.round(words / 200)) };

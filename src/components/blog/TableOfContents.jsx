@@ -1,6 +1,6 @@
 /**
  * In-page outline built from the h2/h3 anchors that src/lib/wpHtml.js added to
- * the post body. Plain anchor links — no JavaScript — so it works in the static
+ * the CMS post body. Plain anchor links — no JavaScript — so it works in the static
  * export and gives Google the jump-link structure it uses for sitelinks.
  */
 export default function TableOfContents({ headings }) {

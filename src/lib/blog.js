@@ -14,48 +14,47 @@ import {
 } from "./siteRoutes";
 
 /**
- * The blog's data layer: read the posts out of the WordPress REST API and hand
- * the rest of the app a clean, site-shaped object.
+ * The blog's data layer: read the posts out of our Laravel CMS API and hand the
+ * rest of the app a clean, site-shaped object.
  *
  * This runs at BUILD TIME only. `output: "export"` in next.config.mjs means
  * `next build` prerenders every route, so the deployed site is plain HTML with
- * no runtime dependency on the WordPress install. Re-run the build to publish
- * newly written posts.
+ * no runtime dependency on the CMS. Re-run the build to publish newly written
+ * posts.
  *
  * Posts live at the site root — /electrolux-laundry-equipment-price-malaysia-2026
- * — matching the permalinks the blog subdomain already uses, so existing links
+ * — matching the permalinks the blog subdomain used to serve, so existing links
  * and rankings carry over. See src/app/[slug]/page.js.
  */
 
-const WP_BASE =
-  process.env.NEXT_PUBLIC_WP_API?.replace(/\/+$/, "") ||
-  "https://blog.launchlaundry.com.my/wp-json/wp/v2";
+const CMS_BASE =
+  process.env.NEXT_PUBLIC_CMS_API?.replace(/\/+$/, "") ||
+  "https://cms.launchlaundry.com.my/api";
+
+// Uploads are served from the CMS public root, not from /api — derive the
+// origin by dropping the API segment, so pointing the env var at staging moves
+// the images with it.
+const CMS_ORIGIN = CMS_BASE.replace(/\/api$/, "");
 
 export const POSTS_PER_PAGE = 12;
 
-// How many posts to pull per API request. Next's data cache refuses anything
-// over 2MB, and each prerender worker would then refetch the whole archive —
-// 40 posts plus embeds lands around 1.4MB, so the fetch happens once per build.
-const FETCH_BATCH = 40;
+// The index carries no body, so each post costs one more request. Cap how many
+// are in flight: the CMS runs on shared hosting and starts returning 500s when
+// several bodies are rendered at once.
+const FETCH_CONCURRENCY = 8;
 
-// Only the fields the site actually renders. Dropping `yoast_head` (the raw
-// <head> markup Yoast also ships) takes roughly a quarter off the response.
-const POST_FIELDS = [
-  "id",
-  "slug",
-  "title",
-  "content",
-  "excerpt",
-  "date",
-  "date_gmt",
-  "modified",
-  "modified_gmt",
-  "author",
-  "featured_media",
-  "categories",
-  "yoast_head_json",
-  "_links",
-].join(",");
+// The API throttles at 60 requests per minute per IP (X-RateLimit-Limit), and a
+// full build needs one index call plus one per post — well past that. Space the
+// requests out rather than bursting into a 429 and losing a minute to recover;
+// a ~190-request build then takes a little over three minutes.
+const REQUESTS_PER_MINUTE = 55;
+const MIN_REQUEST_GAP_MS = Math.ceil(60000 / REQUESTS_PER_MINUTE);
+
+// Next runs the prerender across several worker processes, and each one calls
+// getAllPosts. Only the first crosses the network — the rest are served by the
+// build's fetch cache, and a reply that arrives this fast cannot have been a
+// round trip to Malaysia, so it costs nothing against the rate limit.
+const CACHE_HIT_MS = 25;
 
 /** Routes this site owns. A post slug that collided with one would shadow it. */
 const RESERVED_SLUGS = new Set([
@@ -76,28 +75,100 @@ const RESERVED_SLUGS = new Set([
   "images",
 ]);
 
-async function fetchJson(url, attempt = 1) {
+// Earliest moment the pacer will let the next request start. Shared by every
+// caller, so the concurrency workers stay collectively under the throttle.
+let nextSlot = 0;
+
+/** Wait for this request's turn under the rate limit. */
+function takeSlot() {
+  const now = Date.now();
+  const at = Math.max(now, nextSlot);
+  nextSlot = at + MIN_REQUEST_GAP_MS;
+  return at === now ? Promise.resolve() : new Promise((resolve) => setTimeout(resolve, at - now));
+}
+
+/** Hand a slot back — the request never reached the API, so it cost us nothing. */
+function releaseSlot() {
+  nextSlot = Math.max(Date.now(), nextSlot - MIN_REQUEST_GAP_MS);
+}
+
+/** Push every queued request back — used when the API says we are over budget. */
+function defer(ms) {
+  nextSlot = Math.max(nextSlot, Date.now() + ms);
+}
+
+async function fetchJson(url, attempt = 1, throttled = 0) {
+  await takeSlot();
+  const startedAt = Date.now();
   try {
     const res = await fetch(url, {
       headers: { Accept: "application/json" },
-      // Prerender pulls the archive once; let Next cache it for the build.
+      // Prerender pulls each post once; let Next cache it for the build.
       cache: "force-cache",
     });
+    if (Date.now() - startedAt < CACHE_HIT_MS) releaseSlot();
+
+    // A 429 is the throttle, not a failure: honour Retry-After, hold the other
+    // workers back too, and go again without spending one of the three attempts.
+    if (res.status === 429) {
+      if (throttled >= 5) throw new Error("rate limited repeatedly (HTTP 429)");
+      const wait = (Number(res.headers.get("retry-after")) || 60) * 1000 + 1000;
+      defer(wait);
+      return fetchJson(url, attempt, throttled + 1);
+    }
+
     if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
     return await res.json();
   } catch (error) {
     if (attempt >= 3) {
       throw new Error(
         `Blog build failed: could not read ${url} after 3 attempts (${error.message}). ` +
-          `The WordPress API at ${WP_BASE} must be reachable during \`next build\`.`
+          `The CMS API at ${CMS_BASE} must be reachable during \`next build\`.`
       );
     }
     await new Promise((resolve) => setTimeout(resolve, attempt * 1500));
-    return fetchJson(url, attempt + 1);
+    return fetchJson(url, attempt + 1, throttled);
   }
 }
 
-/** The first image in the body — most posts have no WordPress featured image. */
+/** Run `task` over `items` with at most `limit` in flight, keeping input order. */
+async function mapWithConcurrency(items, limit, task) {
+  const results = new Array(items.length);
+  let next = 0;
+
+  async function worker() {
+    while (next < items.length) {
+      const index = next++;
+      results[index] = await task(items[index], index);
+    }
+  }
+
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+  return results;
+}
+
+/**
+ * Turn a CMS upload path — `blogs/1787813365-washer.jpg` — into a URL. Values
+ * that are already absolute pass straight through; in-content images are hosted
+ * elsewhere and never come through here.
+ */
+function mediaUrl(path) {
+  const value = String(path || "").trim();
+  if (!value) return null;
+  if (/^(?:https?:)?\/\//i.test(value)) return value;
+  return `${CMS_ORIGIN}/${value.replace(/^\/+/, "")}`;
+}
+
+/** A category name as a slug — the CMS stores the label, not a term. */
+function kebabCase(text) {
+  return String(text)
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+/** The first image in the body — the fallback when a post has no featured one. */
 function firstInlineImage(html) {
   const match = String(html || "").match(/<img\b[^>]*\bsrc="([^"]+)"[^>]*>/i);
   if (!match) return null;
@@ -121,59 +192,55 @@ function makeLinkResolver(postSlugs) {
 }
 
 function normalise(post, resolvePath) {
-  const yoast = post.yoast_head_json || {};
-  const embedded = post._embedded || {};
+  const content = post.content || "";
 
-  const title = decodeEntities(post.title?.rendered);
-  const { html, headings } = transformContent(post.content?.rendered, resolvePath);
-  const inline = firstInlineImage(post.content?.rendered);
+  const title = decodeEntities(post.title);
+  const { html, headings } = transformContent(content, resolvePath);
+  const inline = firstInlineImage(content);
 
-  const featured = embedded["wp:featuredmedia"]?.[0];
-  const image =
-    featured?.source_url ||
-    yoast.og_image?.[0]?.url ||
-    inline?.url ||
-    null;
-  const imageAlt =
-    decodeEntities(featured?.alt_text) || inline?.alt || title;
+  // The CMS ships no excerpt field, so derive one from the top of the body.
+  const excerptText = clamp(stripTags(content), 200);
 
-  const category =
-    (embedded["wp:term"] || [])
-      .flat()
-      .find((term) => term?.taxonomy === "category" && term.slug !== "uncategorized") || null;
-
-  const excerptText = clamp(stripTags(post.excerpt?.rendered), 200);
-
-  // Yoast is the editorial source of truth; fall back to the excerpt so every
-  // post still ships a usable description.
+  // The CMS meta fields are the editorial source of truth; fall back to the
+  // excerpt so every post still ships a usable description.
   const metaDescription = clamp(
-    decodeEntities(yoast.description) || excerptText || `${title} — Launch Laundry Malaysia.`,
+    decodeEntities(post.meta_description) || excerptText || `${title} — Launch Laundry Malaysia.`,
     160
   );
+
+  // "Uncategorized" came over from WordPress as a literal category name on a
+  // third of the archive. Treat it as unset, exactly as the old data layer did,
+  // rather than printing it on the cards.
+  const categoryName = decodeEntities(post.category);
+  const category =
+    categoryName && categoryName.toLowerCase() !== "uncategorized" ? categoryName : null;
 
   return {
     id: post.id,
     slug: post.slug,
     title,
-    metaTitle: clamp(decodeEntities(yoast.title) || `${title} | Launch Laundry`, 70),
+    metaTitle: clamp(decodeEntities(post.meta_title) || `${title} | Launch Laundry`, 70),
     metaDescription,
     excerpt: excerptText || metaDescription,
     html,
     headings,
-    faqs: extractFaqs(post.content?.rendered),
-    image,
-    imageAlt,
-    date: post.date_gmt ? `${post.date_gmt}Z` : post.date,
-    modified: post.modified_gmt ? `${post.modified_gmt}Z` : post.modified,
-    author: decodeEntities(embedded.author?.[0]?.name || yoast.author || "Launch Laundry"),
+    faqs: extractFaqs(content),
+    image: mediaUrl(post.featuredImage) || inline?.url || null,
+    imageAlt: decodeEntities(post.featuredImageAlt) || inline?.alt || title,
+    // Already ISO-8601 UTC, `Z` included — do not stamp another one on.
+    date: post.created_at,
+    modified: post.updated_at,
+    author: decodeEntities(post.author) || "Launch Laundry",
     category: category
-      ? { name: decodeEntities(category.name), slug: category.slug }
+      ? { name: category, slug: kebabCase(category) }
       : { name: "Laundry Insights", slug: "insights" },
-    // Deliberately no `noindex` flag. Yoast's REST `robots` value describes the
-    // API request URL, not the post — adding `_fields` or `status` to the query
-    // is enough to make it report "noindex" for the entire archive. Every
-    // published post is indexable here; use WordPress to unpublish instead.
-    ...readingTime(post.content?.rendered),
+    // Deliberately no `noindex` flag. /api/blogs only ever returns published
+    // posts, so everything the build sees is meant to be indexed; unpublish in
+    // the CMS to take a post down.
+    //
+    // The index endpoint's `read_time` is an estimate stored per post — ignored
+    // here so the byline keeps matching the words actually rendered.
+    ...readingTime(content),
   };
 }
 
@@ -183,25 +250,15 @@ let cache;
 export function getAllPosts() {
   if (!cache) {
     cache = (async () => {
-      const head = await fetch(`${WP_BASE}/posts?per_page=1&_fields=id`, {
-        headers: { Accept: "application/json" },
-        cache: "force-cache",
-      });
-      const total = Number(head.headers.get("x-wp-total") || 0);
-      if (!total) throw new Error(`Blog build failed: ${WP_BASE} reported no published posts.`);
-
-      const batches = Math.ceil(total / FETCH_BATCH);
-      const pages = await Promise.all(
-        Array.from({ length: batches }, (_, i) =>
-          fetchJson(
-            `${WP_BASE}/posts?per_page=${FETCH_BATCH}&page=${i + 1}` +
-              `&orderby=date&order=desc&_embed=1&_fields=${POST_FIELDS}`
-          )
-        )
-      );
+      // One call for the whole index — no pagination, no bodies.
+      const index = await fetchJson(`${CMS_BASE}/blogs`);
+      const list = Array.isArray(index) ? index : [];
+      if (!list.length) {
+        throw new Error(`Blog build failed: ${CMS_BASE} reported no published posts.`);
+      }
 
       const seen = new Set();
-      const raw = pages.flat().filter((post) => {
+      const wanted = list.filter((post) => {
         if (!post?.slug || RESERVED_SLUGS.has(post.slug) || seen.has(post.slug)) return false;
         seen.add(post.slug);
         return true;
@@ -210,8 +267,13 @@ export function getAllPosts() {
       // Link rewriting needs the full slug list, so resolve it before normalising.
       const resolvePath = makeLinkResolver(seen);
 
-      return raw
-        .map((post) => normalise(post, resolvePath))
+      // The body only exists on the detail endpoint: one request per post.
+      const bodies = await mapWithConcurrency(wanted, FETCH_CONCURRENCY, (post) =>
+        fetchJson(`${CMS_BASE}/blogs/${encodeURIComponent(post.slug)}`)
+      );
+
+      return bodies
+        .map((body, index) => normalise({ ...wanted[index], ...body }, resolvePath))
         .sort((a, b) => new Date(b.date) - new Date(a.date));
     })();
   }

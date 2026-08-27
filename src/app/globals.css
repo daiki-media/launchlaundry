@@ -49,7 +49,7 @@ body[data-nav-open="true"] .whatsapp-fab {
 /* ---------------------------------------------------------------------------
    Blog article body (src/components/blog/PostBody.jsx).
 
-   The markup comes straight from WordPress, so it carries no utility classes —
+   The markup comes straight from the CMS, so it carries no utility classes —
    these element selectors are what style it. Scoped under .post-body so nothing
    here can leak into the hand-built pages.
    --------------------------------------------------------------------------- */
@@ -162,7 +162,7 @@ body[data-nav-open="true"] .whatsapp-fab {
 /* ---------------------------------------------------------------------------
    Data tables.
 
-   Shared by two sources: the WordPress tables inside blog posts, which
+   Shared by two sources: the editor tables inside blog posts, which
    src/lib/wpHtml.js tags with `.data-table` and stamps a `data-label` onto
    every cell, and the hand-built SpecTable on product pages.
 

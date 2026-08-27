@@ -15,6 +15,12 @@ const nextConfig = {
   //     LiteSpeed need public/.htaccess to map them onto the emitted .html files.
   output: "export",
 
+  // The CMS API throttles at 60 requests a minute, so the first worker to call
+  // getAllPosts spends about three and a half minutes pulling the 184 post
+  // bodies (src/lib/blog.js) — past the 60s default this would abort on. The
+  // rest of the workers read that sweep out of the build fetch cache.
+  staticPageGenerationTimeout: 600,
+
   images: {
     unoptimized: true,
   },

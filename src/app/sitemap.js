@@ -63,7 +63,7 @@ export default async function sitemap() {
     priority: route.priority,
   }));
 
-  // Every post, with the real modified date from WordPress so crawlers can tell
+  // Every post, with the real modified date from the CMS so crawlers can tell
   // what actually changed between builds.
   const posts = await getAllPosts();
   const postRoutes = posts.map((post) => ({

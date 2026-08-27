@@ -72,7 +72,7 @@ export default function PostHeader({ post, breadcrumb }) {
 
       {post.image && (
         <div className="mx-auto max-w-4xl px-5">
-          {/* Remote WordPress upload of unknown size, and the static export
+          {/* Remote CMS upload of unknown size, and the static export
               runs with images.unoptimized — see the note in BlogCard.jsx. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
