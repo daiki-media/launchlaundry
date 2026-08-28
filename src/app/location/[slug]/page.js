@@ -53,6 +53,7 @@ export default async function LocationPage({ params }) {
     isPartOf: { "@id": `${SITE_URL}#website` },
     about: { "@id": `${SITE_URL}#organization` },
     primaryImageOfPage: `${SITE_URL}${page.image}`,
+    breadcrumb: { "@id": `${SITE_URL}/location/${slug}#breadcrumb` },
   };
 
   // The Melaka and Sabah/Sarawak guides carry FAQ sections — expose them for rich results.
@@ -61,6 +62,7 @@ export default async function LocationPage({ params }) {
     "@context": "https://schema.org",
     "@type": "FAQPage",
     "@id": `${SITE_URL}/location/${slug}#faq`,
+    isPartOf: { "@id": `${SITE_URL}/location/${slug}#webpage` },
     mainEntity: faqBlock.items.map((item) => ({
       "@type": "Question",
       name: item.question,
@@ -70,7 +72,7 @@ export default async function LocationPage({ params }) {
 
   return (
     <>
-      <JsonLd schemas={[breadcrumbSchema(breadcrumb), webPageSchema, faqSchema]} />
+      <JsonLd schemas={[breadcrumbSchema(breadcrumb, `${SITE_URL}/location/${slug}#breadcrumb`), webPageSchema, faqSchema]} />
       <PageHero title={page.name} breadcrumb={breadcrumb} />
       <LocationBlocks blocks={page.blocks} />
     </>

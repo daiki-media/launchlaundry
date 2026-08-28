@@ -174,7 +174,7 @@ export const contactBlock = {
   description:
     "If you have a question about this privacy policy, or you want to access, correct, or delete the personal data we hold about you, get in touch and we will help.",
   items: [
-    { label: "Email", value: "info@launchlaundry.com.my", href: "mailto:info@launchlaundry.com.my" },
+    { label: "Email", value: "hijrahpro77@gmail.com", href: "mailto:hijrahpro77@gmail.com" },
     { label: "Phone", value: "+601158888396", href: "tel:+601158888396" },
     {
       label: "Address",

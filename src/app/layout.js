@@ -36,6 +36,7 @@ const websiteSchema = {
   "@id": `${SITE_URL}#website`,
   url: `${SITE_URL}/`,
   name: site.name,
+  description: site.description,
   inLanguage: "en-MY",
   publisher: { "@id": `${SITE_URL}#organization` },
 };
@@ -46,11 +47,31 @@ const organizationSchema = {
   "@id": `${SITE_URL}#organization`,
   name: site.name,
   url: `${SITE_URL}/`,
-  logo: { "@type": "ImageObject", url: `${SITE_URL}/images/logo.png` },
+  description: site.description,
+  // Google wants the logo's dimensions and reads it as the knowledge-panel
+  // image, so give it the real intrinsic size of public/images/logo.png.
+  logo: {
+    "@type": "ImageObject",
+    "@id": `${SITE_URL}#logo`,
+    url: `${SITE_URL}/images/logo.png`,
+    contentUrl: `${SITE_URL}/images/logo.png`,
+    width: 674,
+    height: 929,
+    caption: site.name,
+  },
+  image: { "@id": `${SITE_URL}#logo` },
   email: site.email,
   telephone: site.phone,
-  address: { "@type": "PostalAddress", addressCountry: "MY" },
-  areaServed: "MY",
+  address: { "@type": "PostalAddress", ...site.address },
+  contactPoint: {
+    "@type": "ContactPoint",
+    telephone: site.phone,
+    email: site.email,
+    contactType: "customer service",
+    areaServed: "MY",
+    availableLanguage: ["en", "ms"],
+  },
+  areaServed: { "@type": "Country", name: "Malaysia" },
 };
 
 export default function RootLayout({ children }) {

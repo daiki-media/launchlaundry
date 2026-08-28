@@ -29,6 +29,7 @@ const collectionSchema = {
   name: caseStudyMeta.title,
   description: caseStudyMeta.description,
   isPartOf: { "@id": `${SITE_URL}#website` },
+  breadcrumb: { "@id": `${SITE_URL}/case-study#breadcrumb` },
   mainEntity: {
     "@type": "ItemList",
     numberOfItems: items.length,
@@ -44,7 +45,7 @@ const collectionSchema = {
 export default function CaseStudyPage() {
   return (
     <>
-      <JsonLd schemas={[breadcrumbSchema(pageHero.breadcrumb), collectionSchema]} />
+      <JsonLd schemas={[breadcrumbSchema(pageHero.breadcrumb, `${SITE_URL}/case-study#breadcrumb`), collectionSchema]} />
       <PageHero title={pageHero.title} breadcrumb={pageHero.breadcrumb} />
       <CaseStudyGrid />
     </>

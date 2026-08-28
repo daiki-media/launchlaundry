@@ -112,7 +112,6 @@ async function fetchJson(url, attempt = 1, throttled = 0) {
   }
 }
 
-/** Map with at most `limit` in flight, keeping input order. */
 async function mapWithConcurrency(items, limit, task) {
   const results = new Array(items.length);
   let next = 0;
@@ -152,10 +151,6 @@ function firstInlineImage(html) {
   return { url: match[1], alt: decodeEntities(alt?.[1] || "") };
 }
 
-/**
- * Correct what we know is wrong, keep what exists, and send anything left over
- * to the nearest hub so no post links to a page that was never built.
- */
 function makeLinkResolver(postSlugs) {
   return (path) => {
     const corrected = PATH_CORRECTIONS[path] || path;

@@ -32,6 +32,7 @@ const collectionSchema = {
   name: productsMeta.title,
   description: productsMeta.description,
   isPartOf: { "@id": `${SITE_URL}#website` },
+  breadcrumb: { "@id": `${SITE_URL}/products#breadcrumb` },
   mainEntity: {
     "@type": "ItemList",
     numberOfItems: products.length,
@@ -47,7 +48,7 @@ const collectionSchema = {
 export default function ProductsPage() {
   return (
     <>
-      <JsonLd schemas={[breadcrumbSchema(pageHero.breadcrumb), collectionSchema]} />
+      <JsonLd schemas={[breadcrumbSchema(pageHero.breadcrumb, `${SITE_URL}/products#breadcrumb`), collectionSchema]} />
       <PageHero title={pageHero.title} breadcrumb={pageHero.breadcrumb} />
 
       <section aria-label="Our products" className="bg-white">

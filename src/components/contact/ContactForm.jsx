@@ -13,6 +13,9 @@ import { form } from "@/data/contact";
 // The URL is inlined into the client bundle at build time, so point it at an
 // endpoint designed to be public: submit-only and rate-limited, never a private
 // webhook that leaks data or bills you when strangers post to it.
+//
+// Which inbox the leads land in is decided by the form provider, not here —
+// there is no server in this build to send mail from. See .env.example.
 const ENDPOINT = process.env.NEXT_PUBLIC_CONTACT_ENDPOINT;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -79,6 +82,15 @@ export default function ContactForm() {
           inquiryType: String(data.inquiryType ?? "").trim(),
           message: String(data.message ?? "").trim(),
           receivedAt: new Date().toISOString(),
+          // Provider-agnostic routing hints. Each service reads the keys it
+          // knows and ignores the rest, so one payload works across Formspree,
+          // Web3Forms, FormSubmit and Getform without branching.
+          subject: `New ${String(data.inquiryType ?? "General").trim()} enquiry from ${firstName}`,
+          _subject: `New ${String(data.inquiryType ?? "General").trim()} enquiry from ${firstName}`,
+          // Makes "Reply" in the lead inbox go straight back to the enquirer
+          // instead of to the form service.
+          replyTo: email,
+          _replyto: email,
         }),
       });
       if (!res.ok) throw new Error(`Endpoint responded ${res.status}`);

@@ -45,11 +45,8 @@ export const details = [
   {
     icon: "/images/icons/contact-email.svg",
     title: "Email",
-    lines: ["Business Inquiries: info@launchlaundry.com.my", "Support: support@launchlaundry.com.my"],
-    links: [
-      { label: "Business Inquiries: info@launchlaundry.com.my", href: "mailto:info@launchlaundry.com.my" },
-      { label: "Support: support@launchlaundry.com.my", href: "mailto:support@launchlaundry.com.my" },
-    ],
+    lines: ["hijrahpro77@gmail.com"],
+    links: [{ label: "hijrahpro77@gmail.com", href: "mailto:hijrahpro77@gmail.com" }],
   },
   {
     icon: "/images/icons/contact-hours.svg",

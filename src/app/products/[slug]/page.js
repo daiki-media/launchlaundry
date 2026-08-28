@@ -71,6 +71,23 @@ export default async function ProductPage({ params }) {
     category: "Commercial laundry equipment",
     url: `${SITE_URL}/products/${slug}`,
     manufacturer: { "@id": `${SITE_URL}#organization` },
+    mainEntityOfPage: { "@id": `${SITE_URL}/products/${slug}#webpage` },
+  };
+
+  // The page the Product lives on. Without this node the breadcrumb below has
+  // nothing to hang off and the page is a bare Product floating in the graph.
+  const webPageSchema = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "@id": `${SITE_URL}/products/${slug}#webpage`,
+    url: `${SITE_URL}/products/${slug}`,
+    name: product.meta.title,
+    description: product.meta.description,
+    isPartOf: { "@id": `${SITE_URL}#website` },
+    inLanguage: "en-MY",
+    primaryImageOfPage: { "@type": "ImageObject", url: `${SITE_URL}${product.image}` },
+    breadcrumb: { "@id": `${SITE_URL}/products/${slug}#breadcrumb` },
+    mainEntity: { "@id": `${SITE_URL}/products/${slug}#product` },
   };
 
   // Alternate the background tint on highlight blocks so neighbouring
@@ -79,7 +96,11 @@ export default async function ProductPage({ params }) {
 
   return (
     <>
-      <JsonLd schemas={[breadcrumbSchema(breadcrumb), productSchema]} />
+      <JsonLd schemas={[
+          breadcrumbSchema(breadcrumb, `${SITE_URL}/products/${slug}#breadcrumb`),
+          webPageSchema,
+          productSchema,
+        ]} />
       <PageHero title={product.name} breadcrumb={breadcrumb} />
 
       {product.sections.map((section, i) => {

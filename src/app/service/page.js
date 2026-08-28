@@ -32,6 +32,7 @@ const collectionSchema = {
   name: servicesMeta.title,
   description: servicesMeta.description,
   isPartOf: { "@id": `${SITE_URL}#website` },
+  breadcrumb: { "@id": `${SITE_URL}/service#breadcrumb` },
   mainEntity: {
     "@type": "ItemList",
     numberOfItems: services.length,
@@ -47,7 +48,7 @@ const collectionSchema = {
 export default function ServiceIndexPage() {
   return (
     <>
-      <JsonLd schemas={[breadcrumbSchema(pageHero.breadcrumb), collectionSchema]} />
+      <JsonLd schemas={[breadcrumbSchema(pageHero.breadcrumb, `${SITE_URL}/service#breadcrumb`), collectionSchema]} />
       <PageHero title={pageHero.title} breadcrumb={pageHero.breadcrumb} />
 
       <section aria-label="Our services" className="bg-white">

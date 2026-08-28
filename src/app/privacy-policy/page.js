@@ -29,13 +29,14 @@ const privacySchema = {
   name: privacyMeta.title,
   description: privacyMeta.description,
   isPartOf: { "@id": `${SITE_URL}#website` },
+  breadcrumb: { "@id": `${SITE_URL}/privacy-policy#breadcrumb` },
   about: { "@id": `${SITE_URL}#organization` },
 };
 
 export default function PrivacyPolicyPage() {
   return (
     <>
-      <JsonLd schemas={[breadcrumbSchema(pageHero.breadcrumb), privacySchema]} />
+      <JsonLd schemas={[breadcrumbSchema(pageHero.breadcrumb, `${SITE_URL}/privacy-policy#breadcrumb`), privacySchema]} />
       <PageHero title={pageHero.title} breadcrumb={pageHero.breadcrumb} />
       <PolicyBody />
       <PolicyContact />

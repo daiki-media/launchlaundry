@@ -40,6 +40,7 @@ const collectionSchema = {
   name: locationsMeta.title,
   description: locationsMeta.description,
   isPartOf: { "@id": `${SITE_URL}#website` },
+  breadcrumb: { "@id": `${SITE_URL}/location#breadcrumb` },
   mainEntity: {
     "@type": "ItemList",
     numberOfItems: Object.keys(locationPages).length,
@@ -55,7 +56,7 @@ const collectionSchema = {
 export default function LocationIndexPage() {
   return (
     <>
-      <JsonLd schemas={[breadcrumbSchema(indexHero.breadcrumb), collectionSchema]} />
+      <JsonLd schemas={[breadcrumbSchema(indexHero.breadcrumb, `${SITE_URL}/location#breadcrumb`), collectionSchema]} />
       <PageHero title={indexHero.title} breadcrumb={indexHero.breadcrumb} />
 
       <section aria-label="Our locations" className="bg-white">

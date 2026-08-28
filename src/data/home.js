@@ -1,11 +1,20 @@
-// All homepage content, extracted from the WordPress database (post 59, Elementor data).
-// Edit copy here — components only handle layout.
 
 export const site = {
   name: "Launch Laundry",
   phone: "+601158888396",
   whatsapp: "601158888396",
-  email: "support@launchlaundry.com",
+  // Public-facing address: shown in the footer, on /contact-us, and published
+  // in the Organization schema.
+  email: "hijrahpro77@gmail.com",
+  description:
+    "Launch Laundry supplies commercial washing machines, dryers and genuine spare parts across Malaysia, and handles full laundromat setup — site planning, installation, servicing and business consultancy.",
+  address: {
+    streetAddress: "2, Jalan Hang Tuah Bukit Bintang, City Centre",
+    addressLocality: "Kuala Lumpur",
+    addressRegion: "Wilayah Persekutuan Kuala Lumpur",
+    postalCode: "55100",
+    addressCountry: "MY",
+  },
 };
 
 export const nav = [
@@ -355,7 +364,7 @@ export const ctas = {
 
 export const footer = {
   about:
-    "Delivering innovative laundry solutions to businesses across Malaysia. For inquiries, contact us at support@launchlaundry.com or +601158888396.",
+    "Delivering innovative laundry solutions to businesses across Malaysia. For inquiries, contact us at hijrahpro77@gmail.com or +601158888396.",
   columns: [
     {
       title: "Launch Laundry",

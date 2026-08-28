@@ -5,7 +5,8 @@ import HelpBlock from "@/components/contact/HelpBlock";
 import ContactForm from "@/components/contact/ContactForm";
 import OfficeBar from "@/components/contact/OfficeBar";
 import JsonLd, { SITE_URL, breadcrumbSchema } from "@/components/seo/JsonLd";
-import { contactMeta, pageHero, details, officeBar } from "@/data/contact";
+import { contactMeta, pageHero, officeBar } from "@/data/contact";
+import { site } from "@/data/home";
 
 export const metadata = {
   title: contactMeta.title,
@@ -34,26 +35,29 @@ const contactSchema = {
   description: contactMeta.description,
   isPartOf: { "@id": `${SITE_URL}#website` },
   about: { "@id": `${SITE_URL}#organization` },
+  breadcrumb: { "@id": `${SITE_URL}/contact-us#breadcrumb` },
+  mainEntity: { "@id": `${SITE_URL}#localbusiness` },
 };
 
 // LocalBusiness gives Google the address, hours and phone for local search.
+// It is the same company as the Organization node in the root layout, so it
+// declares that explicitly (parentOrganization + a shared address) rather than
+// standing as a second, unconnected description of the same business.
 const localBusinessSchema = {
   "@context": "https://schema.org",
   "@type": "LocalBusiness",
   "@id": `${SITE_URL}#localbusiness`,
-  name: "Launch Laundry",
+  name: site.name,
+  description: site.description,
   url: `${SITE_URL}/`,
-  image: `${SITE_URL}/images/logo.png`,
+  image: { "@id": `${SITE_URL}#logo` },
+  logo: { "@id": `${SITE_URL}#logo` },
   telephone: officeBar.phone,
-  email: "info@launchlaundry.com.my",
-  address: {
-    "@type": "PostalAddress",
-    streetAddress: "2, Jalan Hang Tuah Bukit Bintang",
-    addressLocality: "Kuala Lumpur",
-    addressRegion: "Wilayah Persekutuan Kuala Lumpur",
-    postalCode: "55100",
-    addressCountry: "MY",
-  },
+  email: site.email,
+  address: { "@type": "PostalAddress", ...site.address },
+  parentOrganization: { "@id": `${SITE_URL}#organization` },
+  areaServed: { "@type": "Country", name: "Malaysia" },
+  currenciesAccepted: "MYR",
   openingHoursSpecification: [
     {
       "@type": "OpeningHoursSpecification",
@@ -61,22 +65,27 @@ const localBusinessSchema = {
       opens: "09:00",
       closes: "18:00",
     },
+    // Stated explicitly so Google shows "Closed" rather than "hours unknown".
+    {
+      "@type": "OpeningHoursSpecification",
+      dayOfWeek: "Sunday",
+      opens: "00:00",
+      closes: "00:00",
+    },
   ],
-  contactPoint: details
-    .filter((d) => d.title === "Phone")
-    .map(() => ({
-      "@type": "ContactPoint",
-      telephone: officeBar.phone,
-      contactType: "customer service",
-      areaServed: "MY",
-      availableLanguage: ["en", "ms"],
-    })),
+  contactPoint: {
+    "@type": "ContactPoint",
+    telephone: officeBar.phone,
+    contactType: "customer service",
+    areaServed: "MY",
+    availableLanguage: ["en", "ms"],
+  },
 };
 
 export default function ContactPage() {
   return (
     <>
-      <JsonLd schemas={[breadcrumbSchema(pageHero.breadcrumb), contactSchema, localBusinessSchema]} />
+      <JsonLd schemas={[breadcrumbSchema(pageHero.breadcrumb, `${SITE_URL}/contact-us#breadcrumb`), contactSchema, localBusinessSchema]} />
       <PageHero title={pageHero.title} breadcrumb={pageHero.breadcrumb} />
       <ContactHero />
       <ContactDetails />

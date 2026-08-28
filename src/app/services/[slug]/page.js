@@ -77,6 +77,22 @@ export default async function ServicePage({ params }) {
     image: `${SITE_URL}${page.image}`,
     provider: { "@id": `${SITE_URL}#organization` },
     areaServed: { "@type": "Country", name: "Malaysia" },
+    mainEntityOfPage: { "@id": `${SITE_URL}/services/${slug}#webpage` },
+  };
+
+  // The page the Service lives on — the anchor for the breadcrumb and FAQ.
+  const webPageSchema = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "@id": `${SITE_URL}/services/${slug}#webpage`,
+    url: `${SITE_URL}/services/${slug}`,
+    name: page.meta.title,
+    description: page.meta.description,
+    isPartOf: { "@id": `${SITE_URL}#website` },
+    inLanguage: "en-MY",
+    primaryImageOfPage: { "@type": "ImageObject", url: `${SITE_URL}${page.image}` },
+    breadcrumb: { "@id": `${SITE_URL}/services/${slug}#breadcrumb` },
+    mainEntity: { "@id": `${SITE_URL}/services/${slug}#service` },
   };
 
   // Pages that carry an FAQ get FAQPage schema too.
@@ -85,6 +101,7 @@ export default async function ServicePage({ params }) {
     "@context": "https://schema.org",
     "@type": "FAQPage",
     "@id": `${SITE_URL}/services/${slug}#faq`,
+    isPartOf: { "@id": `${SITE_URL}/services/${slug}#webpage` },
     mainEntity: faqBlock.items.map((item) => ({
       "@type": "Question",
       name: item.question,
@@ -96,7 +113,12 @@ export default async function ServicePage({ params }) {
 
   return (
     <>
-      <JsonLd schemas={[breadcrumbSchema(breadcrumb), serviceSchema, faqSchema]} />
+      <JsonLd schemas={[
+          breadcrumbSchema(breadcrumb, `${SITE_URL}/services/${slug}#breadcrumb`),
+          webPageSchema,
+          serviceSchema,
+          faqSchema,
+        ]} />
       <PageHero title={page.name} breadcrumb={breadcrumb} />
 
       {page.sections.map((section, i) => {

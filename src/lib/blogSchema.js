@@ -1,15 +1,10 @@
 import { SITE_URL } from "@/components/seo/JsonLd";
 import { POSTS_PER_PAGE, blogPagePath, postPath } from "./blog";
 
-/**
- * JSON-LD for the blog.
- *
- * Everything hangs off the WebSite and Organization nodes already declared in
- * src/app/layout.js, referenced by @id, so the whole site reads as one graph
- * rather than a pile of disconnected snippets.
- */
-
 const abs = (path) => `${SITE_URL}${path === "/" ? "" : path}`;
+
+const slugifyAuthor = (name) =>
+  name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
 /** BlogPosting + the WebPage it lives on, for a single article. */
 export function articleSchema(post) {
@@ -31,7 +26,13 @@ export function articleSchema(post) {
         timeRequired: `PT${post.minutes}M`,
         datePublished: post.date,
         dateModified: post.modified || post.date,
-        author: { "@type": "Organization", "@id": `${SITE_URL}#organization`, name: post.author },
+        author: {
+          "@type": "Organization",
+          "@id": `${SITE_URL}#author-${slugifyAuthor(post.author)}`,
+          name: post.author,
+          url: `${SITE_URL}/about`,
+          parentOrganization: { "@id": `${SITE_URL}#organization` },
+        },
         publisher: { "@id": `${SITE_URL}#organization` },
         ...(post.image
           ? { image: { "@type": "ImageObject", url: post.image, caption: post.imageAlt } }
@@ -54,11 +55,6 @@ export function articleSchema(post) {
   };
 }
 
-/**
- * FAQPage for the Q&A block many posts end with. Only emitted when the
- * questions were actually found in the body — the answers Google shows have to
- * be visible on the page.
- */
 export function faqSchema(post) {
   if (!post.faqs?.length) return null;
   const url = abs(postPath(post.slug));
@@ -76,7 +72,6 @@ export function faqSchema(post) {
   };
 }
 
-/** Blog + ItemList for one page of the archive. */
 export function blogListingSchema({ posts, page }) {
   const path = blogPagePath(page);
   const url = abs(path);

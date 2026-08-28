@@ -34,13 +34,14 @@ const aboutSchema = {
   name: aboutMeta.title,
   description: aboutMeta.description,
   isPartOf: { "@id": `${SITE_URL}#website` },
+  breadcrumb: { "@id": `${SITE_URL}/about#breadcrumb` },
   about: { "@id": `${SITE_URL}#organization` },
 };
 
 export default function AboutPage() {
   return (
     <>
-      <JsonLd schemas={[breadcrumbSchema(pageHero.breadcrumb), aboutSchema]} />
+      <JsonLd schemas={[breadcrumbSchema(pageHero.breadcrumb, `${SITE_URL}/about#breadcrumb`), aboutSchema]} />
       <PageHero title={pageHero.title} breadcrumb={pageHero.breadcrumb} />
       <AboutIntro />
       <OriginStory />
