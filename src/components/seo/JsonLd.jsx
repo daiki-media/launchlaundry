@@ -25,10 +25,16 @@ export default function JsonLd({ schemas }) {
 
 export const SITE_URL = "https://launchlaundry.com.my";
 
-export function breadcrumbSchema(trail) {
+/**
+ * `id` must be passed on any page whose WebPage node points at
+ * `<url>#breadcrumb` — without it the reference dangles and Google reports a
+ * second, empty BreadcrumbList with no itemListElement.
+ */
+export function breadcrumbSchema(trail, id) {
   return {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
+    ...(id ? { "@id": id } : {}),
     itemListElement: trail.map((crumb, i) => ({
       "@type": "ListItem",
       position: i + 1,

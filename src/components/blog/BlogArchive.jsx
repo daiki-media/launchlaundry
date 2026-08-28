@@ -22,7 +22,10 @@ export default function BlogArchive({ posts, page, totalPages, total, from, to }
   return (
     <>
       <JsonLd
-        schemas={[breadcrumbSchema(breadcrumb), blogListingSchema({ posts, page })]}
+        schemas={[
+          breadcrumbSchema(breadcrumb, `${SITE_URL}${blogPagePath(page)}#breadcrumb`),
+          blogListingSchema({ posts, page }),
+        ]}
       />
 
       {/* React hoists these into <head>. Google ignores rel=prev/next now, but

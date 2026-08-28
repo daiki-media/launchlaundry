@@ -67,7 +67,11 @@ export default async function BlogPostPage({ params }) {
 
   return (
     <>
-      <JsonLd schemas={[breadcrumbSchema(breadcrumb), articleSchema(post), faqSchema(post)]} />
+      <JsonLd schemas={[
+          breadcrumbSchema(breadcrumb, `${SITE_URL}${postPath(slug)}#breadcrumb`),
+          articleSchema(post),
+          faqSchema(post),
+        ]} />
 
       <PostHeader post={post} breadcrumb={breadcrumb} />
 
