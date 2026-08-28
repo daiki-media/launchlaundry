@@ -274,53 +274,154 @@ export function transformContent(html, resolvePath = (path) => path) {
   return { html: out.trim(), headings };
 }
 
+/** The heading a post labels its own Q&A section with, when it labels one. */
+const FAQ_HEADING =
+  /<h[2-6]\b[^>]*>(?:(?!<\/h[2-6]>)[\s\S])*?(?:Frequently\s+Asked\s+Questions|\bFAQs?\b)/i;
+
+/** "1.", "Q:", "Q1)" and the bullets the editors number their questions with. */
+const QUESTION_LABEL = /^(?:q\s*\d*\s*[:.)\-]|\d+\s*[:.)]|[-–—•*])\s*/i;
+
+const QUESTION_WORD =
+  /^(?:what|how|why|when|where|who|which|can|do|does|is|are|should|will)\b/i;
+
+/** A run of Q&A shorter than this is article prose, not a FAQ block. */
+const MIN_UNLABELLED_RUN = 3;
+
 /**
- * Pull the question/answer pairs out of a post's FAQ section for FAQPage
- * structured data. Two shapes appear in the archive:
- *   a) <p><strong>Question?</strong></p><p>Answer</p>   (the common one)
- *   b) <h3>Question?</h3><p>Answer</p>
- * The section stays in the body as written — this only mirrors it into schema.
+ * Split a body into inline chunks, in document order, each tagged with the
+ * heading level it sits in (0 when it is ordinary copy).
+ *
+ * The CMS content is only half marked up — plenty of answers are bare text
+ * between blank lines, exactly as WordPress stored them — so a blank line
+ * breaks a block the same as a real tag does.
+ */
+function faqBlocks(html) {
+  const BREAK =
+    /<(\/?)(h[1-6]|p|ul|ol|li|div|table|thead|tbody|tr|td|th|figure|figcaption|blockquote|section|article|aside|header|footer|main|hr|br)\b[^>]*>|\n[ \t\r]*\n/gi;
+
+  const blocks = [];
+  let level = 0;
+  let cursor = 0;
+  let buffer = "";
+
+  const flush = () => {
+    if (buffer.trim()) blocks.push({ level, html: buffer });
+    buffer = "";
+  };
+
+  for (const match of html.matchAll(BREAK)) {
+    buffer += html.slice(cursor, match.index);
+    cursor = match.index + match[0].length;
+    flush();
+
+    const tag = match[2]?.toLowerCase();
+    if (tag && /^h[1-6]$/.test(tag)) level = match[1] === "/" ? 0 : Number(tag[1]);
+  }
+  buffer += html.slice(cursor);
+  flush();
+
+  return blocks;
+}
+
+/**
+ * Pull the question/answer pairs out of a post for FAQPage structured data.
+ *
+ * Where a post labels its FAQ section we read that section and nothing else,
+ * which is what the markup is for. Most of the archive labels nothing — the
+ * questions simply follow the conclusion — so there the whole body is scanned
+ * and a pair only counts inside a run of consecutive questions, keeping the
+ * article's own headings out of the schema.
+ *
+ * The questions themselves come in every shape the block editor allows: a
+ * sub-heading, a bolded paragraph, a numbered list item, or a bolded run of
+ * bare text, with the answer either trailing in the same block or following it.
+ * Nothing is added to the page — this only mirrors copy the reader can already
+ * see, which is what Google requires of FAQPage.
  */
 export function extractFaqs(html) {
   if (!html) return [];
 
   const source = String(html);
-  const start = source.search(
-    /<h[2-4]\b[^>]*>(?:(?!<\/h[2-4]>)[\s\S])*?(?:Frequently\s+Asked\s+Questions|\bFAQs?\b)/i
-  );
-  if (start < 0) return [];
+  const sectionAt = source.search(FAQ_HEADING);
+  const labelled = sectionAt >= 0;
+  const blocks = faqBlocks(labelled ? source.slice(sectionAt) : source);
 
-  const section = source.slice(start);
+  const textOf = (fragment) => stripTags(fragment).replace(QUESTION_LABEL, "").trim();
+
+  // A labelled section is explicit enough to trust a question that forgot its
+  // question mark, and to trust an h2. Elsewhere both would let an ordinary
+  // section title in.
+  const isQuestion = (text) =>
+    text.length >= 12 &&
+    text.length <= 300 &&
+    (/\?$/.test(text) || (labelled && QUESTION_WORD.test(text)));
+
+  /** The question a block asks, plus any answer trailing it, or null. */
+  const asQuestion = (block) => {
+    const bold = block.html.match(
+      /^\s*(?:<(?:strong|b)\b[^>]*>\s*)+([\s\S]*?)(?:\s*<\/(?:strong|b)>\s*)+([\s\S]*)$/i
+    );
+    if (bold) {
+      const question = textOf(bold[1]);
+      if (isQuestion(question)) return { question, trailing: stripTags(bold[2]) };
+    }
+
+    // A heading needs no bolding to be a question.
+    if (block.level >= 3 || (block.level === 2 && labelled)) {
+      const question = textOf(block.html);
+      if (isQuestion(question)) return { question, trailing: "" };
+    }
+
+    return null;
+  };
+
+  const candidates = [];
+
+  blocks.forEach((block, i) => {
+    const asked = asQuestion(block);
+    if (!asked) return;
+
+    // The answer either trails the question in the same block, or it is
+    // everything up to the next question or the next heading.
+    const parts = [];
+    let end = i + 1;
+    if (asked.trailing) {
+      parts.push(asked.trailing);
+    } else {
+      while (end < blocks.length && !blocks[end].level && !asQuestion(blocks[end])) {
+        parts.push(stripTags(blocks[end].html));
+        end += 1;
+      }
+    }
+
+    const answer = clamp(parts.filter(Boolean).join(" "), 900);
+    if (answer.length < 25) return;
+    candidates.push({ question: asked.question, answer, at: i, end });
+  });
+
+  // Group the pairs that sit back to back — each question starting where the
+  // last answer ended. An unlabelled post needs a real run of them before any
+  // of it counts as a FAQ: one stray heading ending in "?" is a section title
+  // or a call to action, not a question the page answers.
   const faqs = [];
   const seen = new Set();
 
-  const push = (question, answer) => {
-    const q = stripTags(question);
-    const a = stripTags(answer);
-    // Real questions only: long enough to be a sentence, short enough to be a heading.
-    if (q.length < 12 || q.length > 300 || a.length < 25) return;
-    if (
-      !/\?$/.test(q) &&
-      !/^(what|how|why|when|where|who|which|can|do|does|is|are|should|will)\b/i.test(q)
-    ) {
-      return;
+  for (let i = 0; i < candidates.length; ) {
+    let j = i + 1;
+    while (j < candidates.length && candidates[j - 1].end === candidates[j].at) j += 1;
+
+    if (labelled || j - i >= MIN_UNLABELLED_RUN) {
+      for (const { question, answer } of candidates.slice(i, j)) {
+        const key = question.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        faqs.push({ question, answer });
+      }
     }
-    const key = q.toLowerCase();
-    if (seen.has(key)) return;
-    seen.add(key);
-    faqs.push({ question: q, answer: clamp(a, 900) });
-  };
+    i = j;
+  }
 
-  // Shape (a): a bolded paragraph followed by one or more plain paragraphs.
-  const bolded =
-    /<p\b[^>]*>\s*(?:<(?:strong|b)>\s*)+([\s\S]*?)(?:\s*<\/(?:strong|b)>\s*)+<\/p>\s*((?:<p\b(?![^>]*>\s*<(?:strong|b)>)[^>]*>[\s\S]*?<\/p>\s*)+)/gi;
-  for (const match of section.matchAll(bolded)) push(match[1], match[2]);
-
-  // Shape (b): a sub-heading followed by its answer paragraphs.
-  const headed = /<h([34])\b[^>]*>([\s\S]*?)<\/h\1>\s*((?:<p\b[^>]*>[\s\S]*?<\/p>\s*)+)/gi;
-  for (const match of section.matchAll(headed)) push(match[2], match[3]);
-
-  return faqs.slice(0, 12);
+  return faqs;
 }
 
 /** Rounded reading time in minutes, at the usual 200 wpm reading speed. */

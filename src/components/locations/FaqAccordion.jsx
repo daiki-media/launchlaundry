@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 // Location pages pass `block`, service pages pass `section`; accept either.
-export default function FaqAccordion({ block, section, tinted }) {
+export default function FaqAccordion({ block, section, tinted, id = "faq" }) {
   const faq = block ?? section;
   const [open, setOpen] = useState(0);
 
@@ -20,6 +20,7 @@ export default function FaqAccordion({ block, section, tinted }) {
               <button
                 type="button"
                 aria-expanded={open === i}
+                aria-controls={`${id}-${i}`}
                 onClick={() => setOpen(open === i ? -1 : i)}
                 className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left"
               >
@@ -41,9 +42,15 @@ export default function FaqAccordion({ block, section, tinted }) {
                   <path d="m6 9 6 6 6-6" />
                 </svg>
               </button>
-              {open === i && (
-                <p className="px-5 pb-5 text-sm leading-relaxed text-body">{item.answer}</p>
-              )}
+              {/* Rendered whether or not it is open, so the answers are in the
+                  HTML for the crawler to read. */}
+              <p
+                id={`${id}-${i}`}
+                hidden={open !== i}
+                className="px-5 pb-5 text-sm leading-relaxed text-body"
+              >
+                {item.answer}
+              </p>
             </div>
           ))}
         </div>

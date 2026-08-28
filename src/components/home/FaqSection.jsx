@@ -5,13 +5,14 @@ import Link from "next/link";
 import SectionBadge from "@/components/ui/SectionBadge";
 import { faq } from "@/data/home";
 
-function FaqItem({ item, open, onToggle }) {
+function FaqItem({ item, open, onToggle, id }) {
   return (
     <div className="rounded-xl bg-white shadow-sm ring-1 ring-slate-100">
       <button
         type="button"
         onClick={onToggle}
         aria-expanded={open}
+        aria-controls={id}
         className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left"
       >
         <span className="text-sm font-bold leading-snug text-navy sm:text-base">{item.question}</span>
@@ -28,9 +29,12 @@ function FaqItem({ item, open, onToggle }) {
           <path d="m6 9 6 6 6-6" />
         </svg>
       </button>
-      {open && (
-        <p className="px-5 pb-5 text-sm leading-relaxed text-body">{item.answer}</p>
-      )}
+      {/* Always rendered, only hidden: the answers have to be in the HTML for
+          the FAQPage schema on this page to describe copy that is really
+          there, and for the crawler to read them at all. */}
+      <p id={id} hidden={!open} className="px-5 pb-5 text-sm leading-relaxed text-body">
+        {item.answer}
+      </p>
     </div>
   );
 }
@@ -63,6 +67,7 @@ export default function FaqSection() {
           {faq.items.map((item, i) => (
             <FaqItem
               key={item.question}
+              id={`home-faq-${i}`}
               item={item}
               open={openIndex === i}
               onToggle={() => setOpenIndex(openIndex === i ? -1 : i)}

@@ -9,17 +9,6 @@ import JsonLd, { SITE_URL, breadcrumbSchema } from "@/components/seo/JsonLd";
 import { articleSchema, faqSchema } from "@/lib/blogSchema";
 import { formatDate, getPost, getPostSlugs, getRelatedPosts, postPath } from "@/lib/blog";
 
-/**
- * A blog post, served from the site root — /electrolux-laundry-equipment-price-malaysia-2026.
- *
- * The permalinks match the ones the blog subdomain used to publish, so links
- * and rankings pointing at blog.launchlaundry.com.my carry over once that host
- * redirects here.
- *
- * The site's catch-all route, but it never shadows a real page: static segments
- * win over a dynamic one in the App Router, and src/lib/blog.js refuses any post
- * slug that collides with an existing route.
- */
 export const dynamicParams = false;
 
 export async function generateStaticParams() {
