@@ -7,6 +7,8 @@
  * Plain string work on purpose. Build time only, so no parser dependency.
  */
 
+import CONTENT_IMAGES from "../data/contentImages.json";
+
 const NAMED_ENTITIES = {
   amp: "&",
   lt: "<",
@@ -118,6 +120,33 @@ export function internalPath(href) {
   if (/^\/(category|tag|author)\//.test(path)) return { path: "/blog", suffix: "" };
 
   return { path, suffix: url.search + url.hash };
+}
+
+/**
+ * Map a CMS inline-image src onto the copy this site serves itself.
+ *
+ * The archive's body images came across from WordPress as relative paths —
+ * `../../../blogs/content-images/x.png` — which a browser resolves against the
+ * post URL, walks up past the root and lands on /blogs/content-images/x.png.
+ * Nothing has ever been served there, so every one of them was a 404.
+ *
+ * The files now live in public/blogs/content-images, re-encoded as WebP, with
+ * their intrinsic sizes recorded in src/data/contentImages.json. Returns null
+ * for anything not in that set, so an unrecognised src is left alone.
+ */
+export function localContentImage(src) {
+  const name = String(src || "").match(/(?:^|\/)blogs\/content-images\/([^/?#]+)$/i)?.[1];
+  if (!name) return null;
+
+  let file;
+  try {
+    file = decodeURIComponent(name);
+  } catch {
+    file = name;
+  }
+  const webp = file.replace(/\.(?:png|jpe?g|webp)$/i, ".webp");
+  const size = CONTENT_IMAGES[webp];
+  return size ? { src: `/blogs/content-images/${webp}`, ...size } : null;
 }
 
 /**
@@ -240,9 +269,24 @@ export function transformContent(html, resolvePath = (path) => path) {
     return match;
   });
 
-  // 6. Images: lazy by default, always with an alt attribute so the markup validates.
+  // 6. Images: pull the body images onto this domain (see localContentImage),
+  //    stamp the intrinsic size on so the browser reserves the right box before
+  //    the bytes arrive, and lazy-load them — the hero in PostHeader is the LCP
+  //    element on an article, and everything here sits below it.
+  //
+  //    `.post-body img` sets `height: auto; max-width: 100%`, so the width and
+  //    height attributes act as an aspect ratio rather than a fixed size.
   out = out.replace(/<img\b([^>]*?)\s*\/?>/gi, (match, attrs) => {
     let next = attrs.trimEnd();
+
+    const local = localContentImage(next.match(/\bsrc="([^"]*)"/i)?.[1]);
+    if (local) {
+      next = next.replace(/\bsrc="[^"]*"/i, `src="${local.src}"`);
+      if (!/\bwidth=/i.test(next) && !/\bheight=/i.test(next)) {
+        next += ` width="${local.width}" height="${local.height}"`;
+      }
+    }
+
     if (!/\balt=/i.test(next)) next += ' alt=""';
     if (!/\bloading=/i.test(next)) next += ' loading="lazy"';
     if (!/\bdecoding=/i.test(next)) next += ' decoding="async"';

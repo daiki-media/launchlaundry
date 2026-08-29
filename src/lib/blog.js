@@ -6,6 +6,7 @@ import {
   stripTags,
   transformContent,
 } from "./wpHtml";
+import { SITE_URL } from "@/components/seo/JsonLd";
 import {
   DEFAULT_FALLBACK,
   PATH_CORRECTIONS,
@@ -143,12 +144,19 @@ function kebabCase(text) {
     .replace(/^-+|-+$/g, "");
 }
 
-/** Fallback for a post with no featured image. */
+/**
+ * Fallback for a post with no featured image.
+ *
+ * Reads the body *after* transformContent has run, so the src is a real URL on
+ * this site rather than the relative WordPress path the CMS stores. JSON-LD and
+ * the OG tags both need it absolute.
+ */
 function firstInlineImage(html) {
   const match = String(html || "").match(/<img\b[^>]*\bsrc="([^"]+)"[^>]*>/i);
   if (!match) return null;
   const alt = match[0].match(/\balt="([^"]*)"/i);
-  return { url: match[1], alt: decodeEntities(alt?.[1] || "") };
+  const url = match[1].startsWith("/") ? `${SITE_URL}${match[1]}` : match[1];
+  return { url, alt: decodeEntities(alt?.[1] || "") };
 }
 
 function makeLinkResolver(postSlugs) {
@@ -166,7 +174,7 @@ function normalise(post, resolvePath) {
 
   const title = decodeEntities(post.title);
   const { html, headings } = transformContent(content, resolvePath);
-  const inline = firstInlineImage(content);
+  const inline = firstInlineImage(html);
 
   // No excerpt field in the CMS — derive one from the top of the body.
   const excerptText = clamp(stripTags(content), 200);

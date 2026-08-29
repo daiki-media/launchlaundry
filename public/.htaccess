@@ -20,6 +20,13 @@ DirectorySlash Off
 <IfModule mod_rewrite.c>
   RewriteEngine On
 
+  # www -> non-www. Every canonical on the site points at the bare host, but the
+  # www host answered 200 on its own, so the whole site existed twice and
+  # crawlers walked both copies. Keep this first: the rules below assume one
+  # host and would otherwise 301 twice.
+  RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
+  RewriteRule ^ https://%1%{REQUEST_URI} [R=301,L]
+
   # /index.html -> / so the homepage has one canonical URL.
   RewriteCond %{THE_REQUEST} \s/+index\.html[\s?] [NC]
   RewriteRule ^ / [R=301,L]
@@ -98,4 +105,15 @@ ErrorDocument 404 /404.html
   <FilesMatch "\.html$">
     Header set Cache-Control "public, max-age=0, must-revalidate"
   </FilesMatch>
+</IfModule>
+
+# Blog body images. Unlike /images/*, these are a fixed set migrated out of
+# WordPress under a name that already encodes their size, so a given URL never
+# changes bytes — a year beats the host's 7-day default. Re-encoding one means
+# giving it a new filename.
+<IfModule mod_headers.c>
+  <IfModule mod_setenvif.c>
+    SetEnvIf Request_URI "^/blogs/content-images/" LONG_CACHE=1
+    Header set Cache-Control "public, max-age=31536000, immutable" env=LONG_CACHE
+  </IfModule>
 </IfModule>

@@ -77,6 +77,13 @@ const organizationSchema = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${jakarta.variable} h-full antialiased`}>
+      <head>
+        {/* Article hero images — the LCP element on every post — are still
+            served from the CMS, so open the connection before the parser
+            reaches the <img> rather than paying DNS + TLS on the LCP path. */}
+        <link rel="preconnect" href="https://cms.launchlaundry.com.my" crossOrigin="" />
+        <link rel="dns-prefetch" href="https://cms.launchlaundry.com.my" />
+      </head>
       <body className="min-h-full flex flex-col">
         <JsonLd schemas={[websiteSchema, organizationSchema]} />
         <Header />
