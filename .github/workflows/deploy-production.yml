@@ -63,6 +63,12 @@ jobs:
           echo "pages built: $pages"
           [ "$pages" -ge 40 ] || { echo "::error::only $pages pages - the CMS fetch probably failed"; exit 1; }
 
+          # scripts/bundle-cms-images.mjs must have run. Without it the export
+          # hotlinks the CMS, and every visitor the CDN bot challenge distrusts
+          # sees a broken image on every post.
+          test -d out/blogs/cms || { echo "::error::out/blogs/cms missing - the CMS image bundler did not run"; exit 1; }
+          echo "bundled images: $(find out/blogs/cms -type f | wc -l)"
+
       - name: Set up the deploy key
         run: |
           mkdir -p ~/.ssh && chmod 700 ~/.ssh
