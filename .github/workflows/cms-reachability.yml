@@ -1,0 +1,54 @@
+# Throwaway diagnostic. Delete once the CMS is reachable from Actions.
+#
+# The build dies with a bare "fetch failed" from undici, which collapses DNS
+# failure, no route, TCP reset, TLS rejection and timeout into one message.
+# This walks the layers one at a time so the fix is aimed at the real one.
+name: CMS reachability
+
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Who is this runner
+        run: |
+          echo "egress IPv4: $(curl -s -4 -m 15 https://api.ipify.org || echo UNAVAILABLE)"
+          echo "egress IPv6: $(curl -s -6 -m 15 https://api64.ipify.org || echo 'none - runner is IPv4 only')"
+
+      - name: DNS
+        run: |
+          echo "--- A ---";    dig +short A    cms.launchlaundry.com.my || true
+          echo "--- AAAA ---"; dig +short AAAA cms.launchlaundry.com.my || true
+
+      # Separates "packets are dropped" from "TLS said no". A timeout here is a
+      # firewall; a refusal is the server answering and declining.
+      - name: Raw TCP to 443
+        run: |
+          for ip in $(dig +short A cms.launchlaundry.com.my); do
+            timeout 12 bash -c "cat < /dev/null > /dev/tcp/$ip/443" \
+              && echo "$ip:443 OPEN" || echo "$ip:443 BLOCKED or refused"
+          done
+
+      - name: TLS handshake
+        run: |
+          timeout 20 openssl s_client -connect cms.launchlaundry.com.my:443 \
+            -servername cms.launchlaundry.com.my </dev/null 2>&1 \
+            | grep -E 'CONNECTED|subject=|issuer=|Verify return code|alert' || echo "no TLS response"
+
+      # If the default curl UA fails and the browser UA succeeds, it is
+      # mod_security or a WAF filtering clients, not an IP block.
+      - name: HTTP with default vs browser user-agent
+        run: |
+          echo "default UA: $(curl -s -4 -o /dev/null -w '%{http_code}' -m 30 https://cms.launchlaundry.com.my/api/blogs || echo FAILED)"
+          echo "browser UA: $(curl -s -4 -o /dev/null -w '%{http_code}' -m 30 -A 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36' https://cms.launchlaundry.com.my/api/blogs || echo FAILED)"
+
+      # The live site is on the same Hostinger account. If this is blocked too,
+      # the block is account-wide and not specific to the CMS subdomain.
+      - name: Is the whole account blocked, or just the CMS
+        run: |
+          echo "live site: $(curl -s -4 -o /dev/null -w '%{http_code}' -m 30 https://launchlaundry.com.my/ || echo FAILED)"
+
+      - name: Verbose curl, full trace
+        run: curl -v -4 -m 40 https://cms.launchlaundry.com.my/api/blogs 2>&1 | head -40 || true

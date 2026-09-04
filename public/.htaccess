@@ -114,6 +114,10 @@ ErrorDocument 404 /404.html
 <IfModule mod_headers.c>
   <IfModule mod_setenvif.c>
     SetEnvIf Request_URI "^/blogs/content-images/" LONG_CACHE=1
+    # /blogs/cms/* is written by scripts/bundle-cms-images.mjs, which stamps a
+    # digest of the bytes into every filename. Re-uploading an image in the CMS
+    # therefore produces a new URL, so these are safe to cache forever too.
+    SetEnvIf Request_URI "^/blogs/cms/" LONG_CACHE=1
     Header set Cache-Control "public, max-age=31536000, immutable" env=LONG_CACHE
   </IfModule>
 </IfModule>

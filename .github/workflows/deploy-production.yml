@@ -8,7 +8,7 @@
 #
 # The site is a static export, so *any* CMS change needs a rebuild -- the server
 # never calls the CMS at request time.
-name: Deploy
+name: Deploy Production
 
 on:
   push:
@@ -16,6 +16,11 @@ on:
     paths-ignore:
       - "README.md"
       - ".github/workflows/ci.yml"
+      - ".github/workflows/deploy-staging.yml"
+      - ".github/workflows/cms-reachability.yml"
+      # Editing this file changes how the site ships, not what the site says.
+      # Use workflow_dispatch to deploy after touching it.
+      - ".github/workflows/deploy-production.yml"
   workflow_dispatch:
   repository_dispatch:
     types: [cms-updated]
@@ -57,6 +62,12 @@ jobs:
           pages=$(find out -name '*.html' | wc -l)
           echo "pages built: $pages"
           [ "$pages" -ge 40 ] || { echo "::error::only $pages pages - the CMS fetch probably failed"; exit 1; }
+
+          # scripts/bundle-cms-images.mjs must have run. Without it the export
+          # hotlinks the CMS, and every visitor the CDN bot challenge distrusts
+          # sees a broken image on every post.
+          test -d out/blogs/cms || { echo "::error::out/blogs/cms missing - the CMS image bundler did not run"; exit 1; }
+          echo "bundled images: $(find out/blogs/cms -type f | wc -l)"
 
       - name: Set up the deploy key
         run: |
