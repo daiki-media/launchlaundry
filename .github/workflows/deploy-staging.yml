@@ -110,15 +110,45 @@ jobs:
           SITE: ${{ vars.SITE_URL }}
         run: |
           set -e
-          code=$(curl -s -o /dev/null -w '%{http_code}' "$SITE/")
-          [ "$code" = "200" ] || { echo "::error::homepage returned $code"; exit 1; }
 
-          code=$(curl -s -o /dev/null -w '%{http_code}' "$SITE/about")
-          [ "$code" = "200" ] || { echo "::error::/about returned $code"; exit 1; }
+          # Hostinger's CDN answers requests from IPs it distrusts -- a GitHub
+          # runner among them -- with 403 and a "Just a moment..." interstitial
+          # instead of the site. That says nothing about the deploy, so retry
+          # past it, and if it is still in the way after that, warn instead of
+          # failing: the rsync above already succeeded, and a step that goes red
+          # for reasons outside the deploy only teaches us to ignore it.
+          UA='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
+          BODY=$(mktemp)
+
+          fetch() { curl -s -A "$UA" --max-time 30 -o "$BODY" -w '%{http_code}' "$1" || true; }
+          challenged() { grep -qi 'Checking your browser before accessing' "$BODY"; }
+
+          check() {
+            for delay in 0 5 15 30; do
+              [ "$delay" = 0 ] || sleep "$delay"
+              code=$(fetch "$1")
+              [ "$code" = "200" ] && { echo "$1 -> 200"; return 0; }
+              challenged || { echo "::error::$1 returned $code"; return 1; }
+            done
+            echo "::warning::$1 unverified -- the CDN bot challenge answered every attempt"
+          }
+
+          check "$SITE/"      || exit 1
+          check "$SITE/about" || exit 1
 
           # If this ever says "Allow", production robots.txt shipped to staging
-          # and the site is indexable.
-          curl -s "$SITE/robots.txt" | grep -q 'Disallow: /' \
-            || { echo "::error::staging robots.txt is not blocking crawlers"; exit 1; }
+          # and the site is indexable. Worth a red job on its own -- but only
+          # once the file itself has actually been read, not the challenge page.
+          code=$(fetch "$SITE/robots.txt")
+          if [ "$code" = "200" ]; then
+            grep -q 'Disallow: /' "$BODY" \
+              || { echo "::error::staging robots.txt is not blocking crawlers"; exit 1; }
+            echo "robots.txt -> Disallow: /"
+          elif challenged; then
+            echo "::warning::robots.txt unverified -- the CDN bot challenge answered"
+          else
+            echo "::error::robots.txt returned $code"
+            exit 1
+          fi
 
           echo "deployed $(git rev-parse --short HEAD) to $SITE"
