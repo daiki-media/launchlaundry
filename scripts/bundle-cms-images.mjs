@@ -65,6 +65,164 @@ const urlPattern = new RegExp(
   "gi"
 );
 
+/**
+ * Next inlines the RSC payload into every page as a run of
+ * `self.__next_f.push([1,"..."])` calls, and writes the same stream verbatim
+ * into the .txt files beside it.
+ *
+ * Swapping a URL in there is not a plain string replace. A flight row that
+ * carries text is introduced by its byte length -- `25:T852,{...}` -- and the
+ * client reads exactly that many bytes before looking for the next row. A local
+ * path is shorter than the CMS URL it replaces, so editing the row without
+ * recounting leaves the reader stranded mid-row, every row after it parses as
+ * garbage, and hydration dies with "Connection closed." (React error #412).
+ * React then throws the server-rendered DOM away, which is a blank page.
+ *
+ * So the payload is parsed into rows, rewritten a row at a time, and re-emitted
+ * with the lengths recounted.
+ */
+const PUSH_PATTERN = /self\.__next_f\.push\(\[1,("(?:[^"\\]|\\.)*")\]\)/g;
+
+// Rows whose body is preceded by a hex byte length rather than running to the
+// next newline: "T" is text, the rest are the typed-array kinds.
+const SIZED_ROW_TAGS = new Set([..."TAOoUSsLlGgMmV"]);
+
+/** Split a flight stream into rows. Offsets and lengths are bytes, not chars. */
+function parseFlightRows(buffer) {
+  const rows = [];
+  let at = 0;
+  while (at < buffer.length) {
+    const colon = buffer.indexOf(0x3a /* : */, at);
+    if (colon < 0) throw new Error(`no row id at byte ${at}`);
+
+    const id = buffer.toString("latin1", at, colon);
+    if (!/^[0-9a-f]*$/.test(id)) throw new Error(`bad row id "${id}" at byte ${at}`);
+
+    let cursor = colon + 1;
+    const first = String.fromCharCode(buffer[cursor]);
+    const tag = /[A-Za-z]/.test(first) ? first : "";
+    if (tag) cursor += 1;
+
+    if (SIZED_ROW_TAGS.has(tag)) {
+      const comma = buffer.indexOf(0x2c /* , */, cursor);
+      const hex = comma < 0 ? "" : buffer.toString("latin1", cursor, comma);
+      if (/^[0-9a-f]+$/.test(hex)) {
+        const start = comma + 1;
+        const end = start + parseInt(hex, 16);
+        if (end > buffer.length) throw new Error(`row ${id}${tag} runs past the end of the stream`);
+        rows.push({ at, id, tag, sized: true, body: buffer.toString("utf8", start, end) });
+        at = end;
+        continue;
+      }
+    }
+
+    const newline = buffer.indexOf(0x0a /* \n */, cursor);
+    const end = newline < 0 ? buffer.length : newline;
+    rows.push({
+      at,
+      id,
+      tag,
+      sized: false,
+      body: buffer.toString("utf8", cursor, end),
+      // The last row of a stream can be left open; re-adding a newline it never
+      // had would shift every byte offset a client counted.
+      unterminated: newline < 0,
+    });
+    at = end + 1;
+  }
+  return rows;
+}
+
+function emitFlightRow(row) {
+  if (row.sized) {
+    const size = Buffer.byteLength(row.body, "utf8").toString(16);
+    return `${row.id}:${row.tag}${size},${row.body}`;
+  }
+  return `${row.id}:${row.tag}${row.body}${row.unterminated ? "" : "\n"}`;
+}
+
+/**
+ * Rewrite a flight stream, re-counting the rows that declare a length.
+ *
+ * The parse is checked by re-emitting it untouched first: if that does not come
+ * back byte-identical, this does not understand the format Next just wrote and
+ * the export is left alone rather than quietly mangled.
+ */
+function rewriteFlightStream(stream, replace) {
+  const rows = parseFlightRows(Buffer.from(stream, "utf8"));
+  if (rows.map(emitFlightRow).join("") !== stream) {
+    throw new Error("re-emitting the RSC payload unchanged did not reproduce it byte for byte");
+  }
+  return rows.map((row) => emitFlightRow({ ...row, body: replace(row.body) })).join("");
+}
+
+/**
+ * A .txt sibling is the same stream with no <script> wrapper around it.
+ * Anything else that happens to end in .txt is ordinary text: rewrite it
+ * directly, but only once it is clear it holds no length-prefixed row to get
+ * wrong.
+ */
+function rewriteTextFile(text, replace) {
+  try {
+    return rewriteFlightStream(text, replace);
+  } catch (error) {
+    if (/(?:^|\n)[0-9a-f]*:[TAOoUSsLlGgMmV][0-9a-f]+,/.test(text)) throw error;
+    return replace(text);
+  }
+}
+
+/** The escaping Next uses for the payload it inlines into a <script>. */
+function encodeFlightChunk(value) {
+  return JSON.stringify(value)
+    .replaceAll("<", "\\u003c")
+    .replaceAll(">", "\\u003e")
+    .replaceAll("&", "\\u0026")
+    .replaceAll("\u2028", "\\u2028")
+    .replaceAll("\u2029", "\\u2029");
+}
+
+/**
+ * Rewrite a page. The inlined payload is handled as one stream even though it
+ * arrives in several <script> tags -- a row can straddle two of them -- and each
+ * rewritten row goes back into the tag it started in, so the document keeps its
+ * shape.
+ */
+function rewriteHtml(html, replace) {
+  PUSH_PATTERN.lastIndex = 0;
+  const chunks = [...html.matchAll(PUSH_PATTERN)].map((match) => JSON.parse(match[1]));
+  if (chunks.length === 0) return replace(html);
+
+  const rows = parseFlightRows(Buffer.from(chunks.join(""), "utf8"));
+  if (rows.map(emitFlightRow).join("") !== chunks.join("")) {
+    throw new Error("re-emitting the RSC payload unchanged did not reproduce it byte for byte");
+  }
+
+  const starts = [];
+  let offset = 0;
+  for (const chunk of chunks) {
+    starts.push(offset);
+    offset += Buffer.byteLength(chunk, "utf8");
+  }
+
+  const rewritten = chunks.map(() => "");
+  for (const row of rows) {
+    let index = 0;
+    while (index + 1 < starts.length && starts[index + 1] <= row.at) index += 1;
+    rewritten[index] += emitFlightRow({ ...row, body: replace(row.body) });
+  }
+
+  let next = 0;
+  PUSH_PATTERN.lastIndex = 0;
+  const withPayload = html.replace(
+    PUSH_PATTERN,
+    () => `self.__next_f.push([1,${encodeFlightChunk(rewritten[next++])}])`
+  );
+
+  // The markup around the payload is ordinary text, and by now the payload holds
+  // no CMS URL for this pass to find.
+  return replace(withPayload);
+}
+
 async function* walk(dir) {
   for (const entry of await readdir(dir, { withFileTypes: true })) {
     const full = path.join(dir, entry.name);
@@ -217,27 +375,31 @@ async function main() {
     for (const url of missing) console.warn(`  - ${url}`);
   }
 
-  let rewritten = 0;
-  for (const [file, text] of sources) {
-    let next = text;
-
-    // Root-relative everywhere first. An absolute URL would name the
-    // production host, and the same export also gets deployed to staging --
-    // there every image would become a cross-origin request to a site that
-    // does not have these files, which Chrome kills as ERR_BLOCKED_BY_ORB.
-    //
-    // This has to be blind to context. Only the HTML writes the URL as a
-    // `src="..."` attribute; the RSC payload carries it as a JSON string, and
-    // matching the attribute form alone left every client-side navigation
-    // pointing at the wrong host while a full reload looked fine.
+  // Root-relative everywhere. An absolute URL would name the production host,
+  // and the same export also gets deployed to staging -- there every image
+  // would become a cross-origin request to a site that does not have these
+  // files, which Chrome kills as ERR_BLOCKED_BY_ORB.
+  //
+  // This has to be blind to context. Only the HTML writes the URL as a
+  // `src="..."` attribute; the RSC payload carries it as a JSON string, and
+  // matching the attribute form alone left every client-side navigation
+  // pointing at the wrong host while a full reload looked fine.
+  const toLocal = (value) => {
+    let next = value;
     for (const [url, name] of mapping) {
       next = next.replaceAll(url, `${LOCAL_DIR}/${name}`);
     }
+    return next;
+  };
 
+  let rewritten = 0;
+  for (const [file, text] of sources) {
     // Then put back the absolute form in the two places that require it. Both
     // are read by crawlers off the served HTML, which have no page context to
     // resolve a relative path against.
-    if (/\.html$/i.test(file)) next = absolutiseForCrawlers(next);
+    const next = /\.html$/i.test(file)
+      ? absolutiseForCrawlers(rewriteHtml(text, toLocal))
+      : rewriteTextFile(text, toLocal);
 
     if (next !== text) {
       await writeFile(file, next);
