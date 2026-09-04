@@ -1,0 +1,104 @@
+# Build the static export and rsync it into the Hostinger web root.
+#
+# Fires on:
+#   - push to main            (code change)
+#   - manual run              (Actions -> Deploy -> Run workflow)
+#   - repository_dispatch     (CMS webhook: blog/product content changed)
+#   - nightly cron            (safety net so CMS edits go live within a day)
+#
+# The site is a static export, so *any* CMS change needs a rebuild -- the server
+# never calls the CMS at request time.
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "README.md"
+      - ".github/workflows/ci.yml"
+  workflow_dispatch:
+  repository_dispatch:
+    types: [cms-updated]
+  schedule:
+    - cron: "0 19 * * *" # 03:00 MYT
+
+# One deploy at a time. Never cancel mid-rsync -- a half-synced web root is live.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build static export
+        env:
+          NEXT_PUBLIC_CMS_API: ${{ vars.NEXT_PUBLIC_CMS_API }}
+          NEXT_PUBLIC_CONTACT_ENDPOINT: ${{ vars.NEXT_PUBLIC_CONTACT_ENDPOINT }}
+        run: npm run build
+
+      # Guard rail: rsync runs with --delete, so an empty or half-built out/
+      # would wipe the live site. Refuse to ship anything that looks wrong.
+      - name: Verify the export before it can delete anything
+        run: |
+          test -f out/index.html  || { echo "::error::out/index.html missing"; exit 1; }
+          test -f out/.htaccess   || { echo "::error::out/.htaccess missing"; exit 1; }
+          test -f out/sitemap.xml || { echo "::error::out/sitemap.xml missing"; exit 1; }
+          pages=$(find out -name '*.html' | wc -l)
+          echo "pages built: $pages"
+          [ "$pages" -ge 40 ] || { echo "::error::only $pages pages - the CMS fetch probably failed"; exit 1; }
+
+      - name: Set up the deploy key
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "${{ secrets.SSH_PORT }}" -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
+
+      # -rlptvz  : recurse, keep symlinks/perms/times, compress. No -o/-g:
+      #            shared hosting will not let you set owner or group.
+      # --delete : pages removed from the CMS disappear from the server too.
+      # The excludes protect anything living under the web root that this repo
+      # does not build. Add to them before you add a folder there by hand.
+      #
+      # staging.launchlaundry.com.my/ is NOT optional. Hostinger put the staging
+      # subdomain's document root inside public_html, so it is a child of this
+      # rsync target -- without the exclude, --delete wipes the whole staging
+      # site on every production deploy.
+      - name: Rsync to Hostinger
+        run: |
+          rsync -rlptvz --delete --human-readable \
+            --exclude 'staging.launchlaundry.com.my/' \
+            --exclude '.well-known/' \
+            --exclude 'cgi-bin/' \
+            --exclude '.htpasswd' \
+            -e "ssh -p ${{ secrets.SSH_PORT }} -o StrictHostKeyChecking=yes" \
+            out/ "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}/"
+
+      # Deploy is not done until the live site answers. Checks a page, the
+      # www -> non-www 301, and one of the .htaccess redirects.
+      - name: Smoke-test the live site
+        env:
+          SITE: ${{ vars.SITE_URL }}
+        run: |
+          set -e
+          code=$(curl -s -o /dev/null -w '%{http_code}' "$SITE/")
+          [ "$code" = "200" ] || { echo "::error::homepage returned $code"; exit 1; }
+
+          code=$(curl -s -o /dev/null -w '%{http_code}' "$SITE/about")
+          [ "$code" = "200" ] || { echo "::error::/about returned $code"; exit 1; }
+
+          loc=$(curl -s -o /dev/null -w '%{redirect_url}' "$SITE/index.html")
+          echo "/index.html -> ${loc:-<none>}"
+
+          echo "deployed $(git rev-parse --short HEAD) to $SITE"

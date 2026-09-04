@@ -1,0 +1,117 @@
+# Build the static export and rsync it into the staging document root.
+#
+# Fires on:
+#   - push to develop         (code change awaiting review)
+#   - manual run              (Actions -> Deploy Staging -> Run workflow)
+#   - repository_dispatch     (CMS webhook, only if you point one at staging)
+#
+# Staging lives at
+#   /home/u767415935/domains/launchlaundry.com.my/public_html/staging.launchlaundry.com.my
+# which is a child of the production web root. That is Hostinger's layout, not
+# ours -- see the matching exclude in deploy-production.yml.
+name: Deploy Staging
+
+on:
+  push:
+    branches: [develop]
+    paths-ignore:
+      - "README.md"
+      - ".github/workflows/ci.yml"
+      - ".github/workflows/deploy-production.yml"
+  workflow_dispatch:
+  repository_dispatch:
+    types: [cms-updated-staging]
+
+# One staging deploy at a time. Unlike production we do cancel: a half-synced
+# staging site costs nobody anything, and fast feedback is the point.
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # The `staging` GitHub Environment supplies its own DEPLOY_PATH secret and
+    # its own SITE_URL / NEXT_PUBLIC_CMS_API variables, so this file is
+    # byte-for-byte the same deploy as production against different values.
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build static export
+        env:
+          NEXT_PUBLIC_CMS_API: ${{ vars.NEXT_PUBLIC_CMS_API }}
+          NEXT_PUBLIC_CONTACT_ENDPOINT: ${{ vars.NEXT_PUBLIC_CONTACT_ENDPOINT }}
+        run: npm run build
+
+      # Same guard rail as production: rsync runs with --delete, so refuse to
+      # ship an empty or half-built out/.
+      - name: Verify the export before it can delete anything
+        run: |
+          test -f out/index.html  || { echo "::error::out/index.html missing"; exit 1; }
+          test -f out/.htaccess   || { echo "::error::out/.htaccess missing"; exit 1; }
+          test -f out/sitemap.xml || { echo "::error::out/sitemap.xml missing"; exit 1; }
+          pages=$(find out -name '*.html' | wc -l)
+          echo "pages built: $pages"
+          [ "$pages" -ge 40 ] || { echo "::error::only $pages pages - the CMS fetch probably failed"; exit 1; }
+
+      # Staging serves the same pages as production, with the same canonical
+      # tags pointing at the live domain. Left alone, Google indexes it and the
+      # whole site exists twice -- exactly the duplicate-host problem the
+      # www -> non-www rule in public/.htaccess was added to fix. Belt and
+      # braces: robots.txt for crawlers that read it, X-Robots-Tag for the ones
+      # that follow a direct link instead.
+      - name: Lock staging out of search engines
+        run: |
+          printf 'User-agent: *\nDisallow: /\n' > out/robots.txt
+          rm -f out/sitemap.xml.gz
+          cat >> out/.htaccess <<'HTACCESS'
+
+          # --- injected by .github/workflows/deploy-staging.yml ---
+          # Staging only. Never let this file reach the production web root.
+          <IfModule mod_headers.c>
+            Header always set X-Robots-Tag "noindex, nofollow, noarchive"
+          </IfModule>
+          HTACCESS
+          echo "robots.txt and X-Robots-Tag applied"
+
+      - name: Set up the deploy key
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "${{ secrets.SSH_PORT }}" -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Rsync to Hostinger staging
+        run: |
+          rsync -rlptvz --delete --human-readable \
+            --exclude '.well-known/' \
+            --exclude 'cgi-bin/' \
+            --exclude '.htpasswd' \
+            -e "ssh -p ${{ secrets.SSH_PORT }} -o StrictHostKeyChecking=yes" \
+            out/ "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}/"
+
+      - name: Smoke-test staging
+        env:
+          SITE: ${{ vars.SITE_URL }}
+        run: |
+          set -e
+          code=$(curl -s -o /dev/null -w '%{http_code}' "$SITE/")
+          [ "$code" = "200" ] || { echo "::error::homepage returned $code"; exit 1; }
+
+          code=$(curl -s -o /dev/null -w '%{http_code}' "$SITE/about")
+          [ "$code" = "200" ] || { echo "::error::/about returned $code"; exit 1; }
+
+          # If this ever says "Allow", production robots.txt shipped to staging
+          # and the site is indexable.
+          curl -s "$SITE/robots.txt" | grep -q 'Disallow: /' \
+            || { echo "::error::staging robots.txt is not blocking crawlers"; exit 1; }
+
+          echo "deployed $(git rev-parse --short HEAD) to $SITE"
