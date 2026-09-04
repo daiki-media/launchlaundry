@@ -1,0 +1,48 @@
+# Runs on every pull request and on any branch that does not deploy on its own.
+# Its only job is to make sure a broken build never reaches the deploy workflow.
+#
+# main and develop are excluded because deploy-production.yml and
+# deploy-staging.yml already build those branches. Running CI too would put two
+# builds on the CMS at once -- ~380 requests against a 60/min limit -- and both
+# would spend the run recovering from 429s.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches-ignore: [main, develop]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run lint
+
+      # NEXT_PUBLIC_* values are inlined into the client bundle at build time,
+      # so they are repository Variables, not Secrets -- they ship to the browser
+      # either way.
+      - name: Build static export
+        env:
+          NEXT_PUBLIC_CMS_API: ${{ vars.NEXT_PUBLIC_CMS_API }}
+          NEXT_PUBLIC_CONTACT_ENDPOINT: ${{ vars.NEXT_PUBLIC_CONTACT_ENDPOINT }}
+        run: npm run build
+
+      - name: Sanity-check the export
+        run: |
+          test -f out/index.html   || { echo "::error::out/index.html missing"; exit 1; }
+          test -f out/.htaccess    || { echo "::error::out/.htaccess missing - public/.htaccess did not get copied"; exit 1; }
+          test -f out/sitemap.xml  || { echo "::error::out/sitemap.xml missing"; exit 1; }
+          echo "pages: $(find out -name '*.html' | wc -l)"
