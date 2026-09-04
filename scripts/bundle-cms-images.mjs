@@ -124,6 +124,28 @@ async function download(url) {
   throw new Error(`${url}: ${lastError.message}`);
 }
 
+/**
+ * Restore absolute URLs for the consumers that cannot resolve a relative one:
+ * og:image / twitter:image, which social scrapers read straight out of the
+ * <head>, and JSON-LD, where schema.org expects a resolvable URL.
+ *
+ * Everything else -- <img src>, srcset, preload hints -- stays root-relative so
+ * the export is portable between staging and production.
+ */
+function absolutiseForCrawlers(html) {
+  const withMeta = html.replace(/<meta\b[^>]*>/gi, (tag) =>
+    tag.replace(
+      new RegExp(`content="(${LOCAL_DIR}/[^"]+)"`, "i"),
+      (_m, url) => `content="${SITE_URL}${url}"`
+    )
+  );
+
+  return withMeta.replace(
+    /<script\b[^>]*type="application\/ld\+json"[^>]*>[\s\S]*?<\/script>/gi,
+    (block) => block.replaceAll(`"${LOCAL_DIR}/`, `"${SITE_URL}${LOCAL_DIR}/`)
+  );
+}
+
 async function pool(items, worker) {
   let cursor = 0;
   const runners = Array.from({ length: Math.min(CONCURRENCY, items.length) }, async () => {
@@ -198,15 +220,25 @@ async function main() {
   let rewritten = 0;
   for (const [file, text] of sources) {
     let next = text;
+
+    // Root-relative everywhere first. An absolute URL would name the
+    // production host, and the same export also gets deployed to staging --
+    // there every image would become a cross-origin request to a site that
+    // does not have these files, which Chrome kills as ERR_BLOCKED_BY_ORB.
+    //
+    // This has to be blind to context. Only the HTML writes the URL as a
+    // `src="..."` attribute; the RSC payload carries it as a JSON string, and
+    // matching the attribute form alone left every client-side navigation
+    // pointing at the wrong host while a full reload looked fine.
     for (const [url, name] of mapping) {
-      const local = `${LOCAL_DIR}/${name}`;
-      // src/srcset take a root-relative path so the same export works on
-      // staging and production without knowing which host it landed on.
-      next = next.replaceAll(`src="${url}"`, `src="${local}"`);
-      // Everything left is og:image, twitter:image or JSON-LD, and each of
-      // those is only valid as an absolute URL.
-      next = next.replaceAll(url, `${SITE_URL}${local}`);
+      next = next.replaceAll(url, `${LOCAL_DIR}/${name}`);
     }
+
+    // Then put back the absolute form in the two places that require it. Both
+    // are read by crawlers off the served HTML, which have no page context to
+    // resolve a relative path against.
+    if (/\.html$/i.test(file)) next = absolutiseForCrawlers(next);
+
     if (next !== text) {
       await writeFile(file, next);
       rewritten += 1;
