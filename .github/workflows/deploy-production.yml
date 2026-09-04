@@ -8,7 +8,7 @@
 #
 # The site is a static export, so *any* CMS change needs a rebuild -- the server
 # never calls the CMS at request time.
-name: Deploy
+name: Deploy Production
 
 on:
   push:
@@ -16,6 +16,11 @@ on:
     paths-ignore:
       - "README.md"
       - ".github/workflows/ci.yml"
+      - ".github/workflows/deploy-staging.yml"
+      - ".github/workflows/cms-reachability.yml"
+      # Editing this file changes how the site ships, not what the site says.
+      # Use workflow_dispatch to deploy after touching it.
+      - ".github/workflows/deploy-production.yml"
   workflow_dispatch:
   repository_dispatch:
     types: [cms-updated]

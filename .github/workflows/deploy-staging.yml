@@ -18,6 +18,9 @@ on:
       - "README.md"
       - ".github/workflows/ci.yml"
       - ".github/workflows/deploy-production.yml"
+      - ".github/workflows/cms-reachability.yml"
+      # Same reasoning as deploy-production.yml: config change, not content.
+      - ".github/workflows/deploy-staging.yml"
   workflow_dispatch:
   repository_dispatch:
     types: [cms-updated-staging]
