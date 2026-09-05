@@ -14,37 +14,19 @@ import {
   SITE_ROUTES,
 } from "./siteRoutes";
 
-/**
- * The blog's data layer: read the posts out of our Laravel CMS API and hand the
- * rest of the app a clean, site-shaped object.
- *
- * Build time only — `output: "export"` prerenders every route, so the deployed
- * site never calls the CMS. Posts live at the site root to keep the permalinks
- * the blog subdomain used to serve.
- */
 
-const CMS_BASE =
-  process.env.NEXT_PUBLIC_CMS_API?.replace(/\/+$/, "") ||
-  "https://cms.launchlaundry.com.my/api";
+const CMS_BASE ="https://cms.launchlaundry.com.my/api";
 
-// Uploads live at the CMS root, not under /api, so staging moves with the env var.
 const CMS_ORIGIN = CMS_BASE.replace(/\/api$/, "");
 
 export const POSTS_PER_PAGE = 12;
 
-// Shared hosting starts returning 500s when several bodies render at once.
 const FETCH_CONCURRENCY = 8;
 
-// The API throttles at 60 requests a minute per IP and a build needs ~190, so
-// space them out rather than burst into a 429 and lose a minute recovering.
 const REQUESTS_PER_MINUTE = 55;
 const MIN_REQUEST_GAP_MS = Math.ceil(60000 / REQUESTS_PER_MINUTE);
 
-// Every prerender worker calls getAllPosts, but only the first crosses the
-// network; a reply this fast came from the build cache and costs us no quota.
 const CACHE_HIT_MS = 25;
-
-/** Routes this site owns. A post slug that collided with one would shadow it. */
 const RESERVED_SLUGS = new Set([
   "about",
   "blog",
@@ -62,8 +44,6 @@ const RESERVED_SLUGS = new Set([
   "_next",
   "images",
 ]);
-
-// Shared by every caller, so the workers stay collectively under the throttle.
 let nextSlot = 0;
 
 function takeSlot() {
@@ -90,8 +70,6 @@ async function fetchJson(url, attempt = 1, throttled = 0) {
       cache: "force-cache",
     });
     if (Date.now() - startedAt < CACHE_HIT_MS) releaseSlot();
-
-    // The throttle, not a failure: wait it out without spending an attempt.
     if (res.status === 429) {
       if (throttled >= 5) throw new Error("rate limited repeatedly (HTTP 429)");
       const wait = (Number(res.headers.get("retry-after")) || 60) * 1000 + 1000;
@@ -128,7 +106,6 @@ async function mapWithConcurrency(items, limit, task) {
   return results;
 }
 
-/** `blogs/1787813365-washer.jpg` -> a full URL. Absolute values pass through. */
 function mediaUrl(path) {
   const value = String(path || "").trim();
   if (!value) return null;
@@ -144,13 +121,6 @@ function kebabCase(text) {
     .replace(/^-+|-+$/g, "");
 }
 
-/**
- * Fallback for a post with no featured image.
- *
- * Reads the body *after* transformContent has run, so the src is a real URL on
- * this site rather than the relative WordPress path the CMS stores. JSON-LD and
- * the OG tags both need it absolute.
- */
 function firstInlineImage(html) {
   const match = String(html || "").match(/<img\b[^>]*\bsrc="([^"]+)"[^>]*>/i);
   if (!match) return null;
@@ -176,16 +146,13 @@ function normalise(post, resolvePath) {
   const { html, headings } = transformContent(content, resolvePath);
   const inline = firstInlineImage(html);
 
-  // No excerpt field in the CMS — derive one from the top of the body.
   const excerptText = clamp(stripTags(content), 200);
 
-  const metaDescription = clamp(
-    decodeEntities(post.meta_description) || excerptText || `${title} — Launch Laundry Malaysia.`,
-    160
-  );
+  const metaDescription =
+    decodeEntities(post.meta_description) ||
+    clamp(excerptText, 160) ||
+    `${title} — Launch Laundry Malaysia.`;
 
-  // "Uncategorized" rode over from WordPress on a third of the archive. Treat it
-  // as unset rather than printing it on the cards.
   const categoryName = decodeEntities(post.category);
   const category =
     categoryName && categoryName.toLowerCase() !== "uncategorized" ? categoryName : null;
@@ -194,7 +161,7 @@ function normalise(post, resolvePath) {
     id: post.id,
     slug: post.slug,
     title,
-    metaTitle: clamp(decodeEntities(post.meta_title) || `${title} | Launch Laundry`, 70),
+    metaTitle: decodeEntities(post.meta_title) || `${title} | Launch Laundry`,
     metaDescription,
     excerpt: excerptText || metaDescription,
     html,
@@ -202,22 +169,18 @@ function normalise(post, resolvePath) {
     faqs: extractFaqs(content),
     image: mediaUrl(post.featuredImage) || inline?.url || null,
     imageAlt: decodeEntities(post.featuredImageAlt) || inline?.alt || title,
-    // Already ISO-8601 UTC, `Z` included.
     date: post.created_at,
     modified: post.updated_at,
     author: decodeEntities(post.author) || "Launch Laundry",
     category: category
       ? { name: category, slug: kebabCase(category) }
       : { name: "Laundry Insights", slug: "insights" },
-    // No `noindex` flag: /api/blogs only returns published posts. The index
-    // endpoint's `read_time` is an estimate, so count the real words instead.
     ...readingTime(content),
   };
 }
 
 let cache;
 
-/** Every published post, newest first. Fetched once per build. */
 export function getAllPosts() {
   if (!cache) {
     cache = (async () => {
