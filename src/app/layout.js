@@ -18,6 +18,9 @@ export const metadata = {
   description:
     "Starting a laundromat or upgrading your laundry business? Launch Laundry supplies commercial washers, dryers & spare parts across Malaysia, with full setup support.",
   alternates: { canonical: "/" },
+  verification: {
+    google: "whB9oOzAGzNBqwKsqMUZd5q56U5YUQrf2L7ySt9AUMw",
+  },
   openGraph: {
     type: "website",
     locale: "en_MY",
