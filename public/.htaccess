@@ -79,6 +79,15 @@ DirectorySlash Off
 
   RewriteRule ^contact-2/?$ /contact-us [R=301,L]
 
+  # /about/ -> /about. Every canonical, sitemap entry and internal link is
+  # slashless, but the rewrite below answers both forms with 200, so each page
+  # existed at two URLs. This only fires when the slashless path has a page
+  # behind it: directories with no page of their own (/services/, /_next/,
+  # /images/) are left exactly as they were. Keep it below the renamed-slug
+  # rules so those still reach their new home in one hop.
+  RewriteCond %{DOCUMENT_ROOT}/$1.html -f
+  RewriteRule ^(.+?)/+$ /$1 [R=301,L]
+
   # Serve /about from about.html, /products/foo from products/foo.html and
   # /electrolux-commercial-washer-malaysia from its post file at the root.
   #
