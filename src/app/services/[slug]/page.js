@@ -6,6 +6,7 @@ import FeatureCards from "@/components/products/FeatureCards";
 import HighlightBlock from "@/components/products/HighlightBlock";
 import ServiceProse from "@/components/services/ServiceProse";
 import ServiceCallout from "@/components/services/ServiceCallout";
+import ServiceTable from "@/components/services/ServiceTable";
 import PricingPackages from "@/components/services/PricingPackages";
 import FaqAccordion from "@/components/locations/FaqAccordion";
 import JsonLd, { SITE_URL, breadcrumbSchema } from "@/components/seo/JsonLd";
@@ -43,6 +44,7 @@ export async function generateMetadata({ params }) {
 // identical across the site.
 const RENDERERS = {
   intro: ProductIntro,
+  table: ServiceTable,
   cards: IconCards,
   featureCards: FeatureCards,
   highlight: HighlightBlock,
@@ -53,7 +55,7 @@ const RENDERERS = {
 };
 
 // Section types that alternate their background tint.
-const TINTABLE = new Set(["highlight", "prose", "pricing", "faq"]);
+const TINTABLE = new Set(["highlight", "prose", "table", "pricing", "faq"]);
 
 export default async function ServicePage({ params }) {
   const { slug } = await params;
