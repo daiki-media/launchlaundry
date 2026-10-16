@@ -716,146 +716,310 @@ export const servicePages = {
     ],
   },
   "self-service-laundromat-setup": {
-    // WordPress post 4032
-    name: "Self-Service Laundromat Setup",
+    // WordPress post 4032. Copy from SEO-071 (16 Oct 2026), word for word.
+    name: "Self-Service Laundromat Setup in Malaysia",
     meta: {
-      title: "Self-Service Laundromat Setup & Design Services | Launch Laundry",
-      description: "Launch Laundry provides self-service laundromat setup and design services with expert planning, modern layouts, and equipment tailored to your business.",
+      title: "Self-Service Laundromat Setup in Malaysia by Launch Laundry",
+      description: "Plan, equip and open your self-service laundromat in Malaysia. Site checks, machine selection, installation and opening support from our KL team.",
     },
     image: "/images/services/card-self-service-setup.jpg",
     sections: [
       {
-        type: "intro",
-        badge: "Introduction",
-        title: "Self-Service Laundromat Setup",
-        image: "/images/services/laundry-systems-distributor-1.jpg",
-        imageAlt: "Self-Service Laundromat Setup",
-        paragraphs: [
-          "The backbone of Malaysia’s laundry boom is the self-service laundromat: unmanned, cashless, and open 24/7. But behind every successful outlet lies meticulous setup planning,from selecting the right washing machines and dryers, to designing hygienic layouts, to ensuring utility efficiency.",
-          "At Launch Laundry, our Self-Service Laundromat Setup service transforms empty shop lots into fully operational, customer-ready laundromats. We manage the process end-to-end, ensuring that your outlet is not just operational but optimized for maximum profitability from day one.",
+        type: "prose",
+        body: [
+          [
+            "Opening a self-service laundromat takes more than a shop lot and a few machines. The water supply, the power, the layout and the machine mix decide whether the store runs smoothly or fights you every day. Most owners start by asking what it takes to ",
+            { a: "start a self-service laundry in Malaysia", href: "/how-much-does-it-cost-to-start-a-self-service-laundry-in-malaysia" },
+            ", and the honest answer depends on the site.",
+          ],
+          "Launch Laundry helps you turn an empty unit into a working, customer-ready laundromat: from checking the site, to choosing and installing the machines, to getting ready for opening week. Below is what the service covers, how equipment is chosen, where we work and how to start an enquiry.",
         ],
       },
       {
-        type: "highlight",
-        badge: "Why Strategy Matters",
-        title: "Why Self-Service Setup Needs Professional Guidance",
-        paragraphs: [
-          "While it may seem simple to purchase machines and open a shop, most DIY laundromat setups fail within 2 years due to:",
+        type: "table",
+        heading: "What Our Self-Service Laundromat Setup Service Covers",
+        body: ["The work follows six stages, from the first site visit to opening support."],
+        columns: ["Stage", "What happens"],
+        rows: [
+          ["1. Site inspection and readiness check", "Review of water, drainage, electrical capacity (including three-phase power), ventilation and floor space before delivery"],
+          ["2. Layout planning and machine mix", "Plan for customer flow, zones and spacing, and the washer and dryer mix"],
+          ["3. Equipment supply and specification", "Machines chosen around your volume, load size and cost goals"],
+          ["4. Installation and setup", "Delivery, placement, levelling, plumbing, electrical connections and venting"],
+          ["5. Commissioning and testing", "Washers, spin cycles, dryers and airflow tested, then handover notes"],
+          ["6. Launch support", "Opening checklist, pricing and hours guidance, promotion ideas"],
         ],
-        checkList: [
-          "Poor machine selection (wrong load capacities, high energy consumption).",
-          "Weak layout design causing customer discomfort and low machine turnover.",
-          "Inadequate water/electricity planning → high bills or frequent breakdowns.",
-          "Lack of cashless payment systems → customers prefer modern, QR-pay outlets.",
+        after: [
+          [
+            "Timelines vary by site readiness and project scope, so a realistic schedule comes after the site check. The same stages run through our turnkey ",
+            { a: "laundromat setup and installation service", href: "/services/laundromat-setup-and-installation-malaysia" },
+            ", which suits owners who want one team from the day they get the keys to opening day.",
+          ],
         ],
+      },
+      {
+        type: "prose",
+        heading: "What You Receive from a Laundromat Setup Project",
         image: "/images/services/laundry-equipment-supplier-1.jpg",
-        imageAlt: "Why Self-Service Setup Needs Professional Guidance",
-        framed: true,
-      },
-      {
-        type: "featureCards",
-        badge: "What we offers",
-        title: "Our Self-Service Laundromat Setup Framework",
-        cards: [
+        imageAlt: "Rows of commercial washers and dryers lining a bright self-service laundromat",
+        body: [
+          "Every project comes with documents you can keep and work from:",
           {
-            icon: "/images/icons/feature-efficiency.svg",
-            title: "Location & Site Preparation",
-            points: [
-              "Demographic analysis to validate catchment area.",
-              "Utility assessments (water pressure, 3-phase power requirements).",
-              "Space planning for optimal customer flow.",
-              "Compliance approvals (local council permits, fire safety, drainage).",
-            ],
-          },
-          {
-            icon: "/images/icons/feature-reliable.svg",
-            title: "Machine Procurement & Installation",
-            points: [
-              "Comparative selection of top brands (Speed Queen, Electrolux, LG Commercial, Maytag).",
-              "Balanced washer/dryer mix (7kg, 10kg, 15kg).",
-              "High-efficiency models to minimize water & energy costs.",
-              "Professional installation with proper drainage, piping, and ventilation.",
-            ],
-          },
-          {
-            icon: "/images/icons/feature-safety.svg",
-            title: "Cashless & Smart Systems Integration",
-            points: [
-              "Loyalty program integration (mobile app points & credits).",
-              "Real-time machine monitoring via IoT dashboards.",
-              "Remote machine control for operators.",
-            ],
-          },
-          {
-            icon: "/images/icons/feature-user-friendly.svg",
-            title: "Hygienic & Customer-Centric Design",
-            points: [
-              "Anti-slip flooring and moisture-resistant materials.",
-              "Ventilation and humidity control for machine longevity.",
-              "Bright lighting and CCTV integration for security.",
-              "Customer seating, detergent vending, folding tables.c",
-            ],
-          },
-          {
-            icon: "/images/icons/feature-efficiency.svg",
-            title: "Operational Readiness",
-            points: [
-              "Staff training (if semi-assisted model).",
-              "Preventive maintenance schedules.",
-              "Pricing setup (competitive but ROI-driven).",
-              "Pre-launch promotions (discount cycles, free drying vouchers).",
+            ul: [
+              "A custom site feasibility report",
+              "A machine procurement and installation guide",
+              "Utility and compliance documentation",
+              "A cashless system integration blueprint",
             ],
           },
         ],
       },
       {
-        type: "highlight",
-        badge: "Who we are",
-        title: "Deliverables of Our Laundromat Setup Service",
-        paragraphs: [
-          "Our clients receive:",
+        type: "table",
+        heading: "How to Choose Commercial Laundry Equipment for a Laundromat",
+        body: ["Equipment is where new owners most often overspend or under-buy, so the choice is made in steps, not picked from a catalogue."],
+        columns: ["Step", "What we look at", "Why it matters"],
+        rows: [
+          ["Customers and volume", "Who will use the store and how many loads a day", "Sets the number and size of machines"],
+          ["Machine mix", "Washers in sizes such as 7 kg, 10 kg and 15 kg, plus enough dryers", "Avoids queues at peak hours"],
+          ["Brand and warranty", "Experience with Speed Queen, Electrolux and LG Commercial", "Affects reliability and repair costs"],
+          ["Running costs", "Water and energy efficiency", "Shapes your monthly margin"],
+          ["Space", "Footprint of each machine", "Decides whether stacked units make sense"],
         ],
-        checkList: [
-          "Custom Site Feasibility Report.",
-          "Machine Procurement & Installation Guide.",
-          "Utility & Compliance Documentation.",
-          "Cashless System Integration Blueprint.",
+        after: [
+          [
+            "Brand choice deserves a proper look, and the trade-offs between ",
+            { a: "Electrolux, Speed Queen and Alliance", href: "/electrolux-vs-speed-queen-vs-alliance" },
+            " are worth understanding before you commit. Models that use less water and power ease your monthly bills, which is the case for ",
+            { a: "eco-friendly commercial laundry machines", href: "/eco-friendly-commercial-laundry-machines" },
+            ". In a small unit, ",
+            { a: "stack washer dryer units", href: "/stack-washer-dryer-units-small-shoplots-kl" },
+            " free up floor space.",
+          ],
+          [
+            "On the dryer side, the ",
+            { a: "LaundryMate tumble dryers", href: "/products/laundrymate-commercial-tumble-dryer" },
+            " run from 15 kg to 100 kg. For washers there are the ",
+            { a: "W060F and W2110F industrial machines", href: "/products/w060f-w2110f-industrial-laundry-machines" },
+            " and the ",
+            { a: "WALES series", href: "/products/wales-series-professional-laundry-equipment" },
+            ". A quote based on your floor plan comes through ",
+            { a: "commercial laundry equipment supply", href: "/services/commercial-laundry-equipment-supply-malaysia" },
+            ".",
+          ],
         ],
+      },
+      {
+        type: "prose",
+        heading: "Cashless Payment and Smart Laundromat Systems",
+        image: "/images/services/laundry-systems-distributor-1.jpg",
+        imageAlt: "Stacked washer-dryer units numbered 1 to 5 in a self-service laundromat",
+        body: [
+          "Customers increasingly expect to pay by QR or e-wallet, so the setup can include:",
+          {
+            ul: [
+              "A loyalty programme through a mobile app, with points and credits",
+              "Real-time machine monitoring through an IoT dashboard",
+              "Remote machine control for operators",
+            ],
+          },
+          [
+            "Loyalty credits also give you a lever for ",
+            { a: "attracting more dryer-only customers", href: "/increase-dryer-only-customers-self-service-laundromat-malaysia" },
+            ". Apps and CCTV collect personal data, so it pays to understand your ",
+            { a: "PDPA obligations for laundromat apps and CCTV", href: "/pdpa-compliance-laundromat-app-cctv-customer-data-malaysia" },
+            " from day one.",
+          ],
+        ],
+      },
+      {
+        type: "table",
+        heading: "Laundromat Design, Hygiene and Compliance Planning",
+        body: [
+          "A laundromat should feel clean, bright and safe. The design side covers:",
+          {
+            ul: [
+              "Anti-slip, moisture-resistant flooring",
+              "Ventilation and humidity control",
+              "Bright lighting and CCTV",
+              "Seating, detergent vending and folding tables",
+            ],
+          },
+          "Compliance planning covers council permits, fire safety and drainage. Here is what to plan for:",
+        ],
+        columns: ["Area", "What to plan for"],
+        rows: [
+          [
+            "Fire safety",
+            [
+              "Clear lint paths and ventilation, with ",
+              { a: "dryer lint fire prevention and Bomba requirements", href: "/dryer-lint-fire-prevention-bomba-requirements-laundromat-malaysia" },
+              " in mind",
+            ],
+          ],
+          [
+            "Tax",
+            [
+              { a: "SST registration rules", href: "/sst-registration-rules-self-service-laundromat-malaysia" },
+              " depend on your turnover, and ",
+              { a: "LHDN e-invoice rules", href: "/lhdn-einvoice-rules-self-service-laundromat-malaysia" },
+              " apply to your billing",
+            ],
+          ],
+          [
+            "Noise and vibration",
+            [
+              "Extra care in shops below homes, including ",
+              { a: "noise control below residential units", href: "/noise-control-laundromat-below-residential-units-kl" },
+              " and ",
+              { a: "soft-mount or hard-mount washers for upper floors", href: "/soft-mount-vs-hard-mount-commercial-washers-upper-floor-malaysia" },
+            ],
+          ],
+          [
+            "Water supply",
+            [
+              "A backup plan, especially where ",
+              { a: "water supply disruptions in Selangor", href: "/water-supply-disruption-contingency-plan-selangor-laundromat" },
+              " are a risk",
+            ],
+          ],
+        ],
+      },
+      {
+        type: "table",
+        heading: "Where We Support Laundromat Setups in Malaysia",
+        body: [
+          [
+            "Our office is in Kuala Lumpur, and consultation, installation and after-sales support are available wherever you are in Malaysia. The ",
+            { a: "areas we serve", href: "/location" },
+            " include:",
+          ],
+        ],
+        columns: ["Area", "Support"],
+        rows: [
+          ["Kuala Lumpur", "Full setup support, coin and e-wallet payment systems, and ongoing guidance"],
+          ["Selangor", "From choosing the location through machine installation"],
+          ["Johor Bahru", "Equipment and business advice"],
+          ["Penang", "Tools and expertise for sustainable laundry businesses"],
+          ["Melaka", "Equipment supply, training and consultation"],
+          ["Sabah and Sarawak", "Support for entrepreneurs, from Kota Kinabalu to Kuching"],
+        ],
+      },
+      {
+        type: "prose",
+        heading: "Who You’ll Work With",
         image: "/images/services/laundry-setup-services.jpg",
-        imageAlt: "Deliverables of Our Laundromat Setup Service",
-        framed: true,
+        imageAlt: "Laundry operator in uniform selecting a cycle on a commercial washer",
+        body: [
+          [
+            "Launch Laundry works with business consultants, engineers and technologists, marketing strategists and finance advisors, so one team can cover the site, the machines, the budget and the launch. For market research there is ",
+            { a: "research planning for laundry businesses", href: "/services/research-planning-for-laundry-businesses" },
+            ", budgeting sits with ",
+            { a: "finance advisory for laundry startups", href: "/services/finance-advisory-for-laundry-startups" },
+            ", and growth after opening is handled through ",
+            { a: "revenue generation and scale-up support", href: "/services/revenue-generation-and-scale-up-for-laundromats" },
+            ". Past ",
+            { a: "laundromat projects", href: "/case-study" },
+            " show the kind of work involved.",
+          ],
+        ],
       },
       {
-        type: "cards",
-        badge: "Why Choose Us",
-        title: "Why Choose Launch Laundry’s for Business Promotion?",
-        description: "Default description",
-        cards: [
+        type: "table",
+        heading: "How to Start Your Laundromat Setup Enquiry",
+        columns: ["Step", "What to do", "Detail"],
+        rows: [
+          [
+            "1",
+            "Send your enquiry",
+            [
+              "Use the ",
+              { a: "contact form", href: "/contact-us" },
+              " and choose an inquiry type (Investor, Franchise, Commercial Laundry or General), or call or WhatsApp",
+            ],
+          ],
+          ["2", "Describe your project", "Share your location, the size of the unit or a floor plan, the machines you have in mind and your opening date"],
+          ["3", "Hear back", "We aim to respond within 24 business hours"],
+          ["4", "Book the site check", "Water, drainage, power, ventilation and space are reviewed"],
+          ["5", "Receive recommendations", "A proposed layout, machine mix and quote based on your floor plan"],
+        ],
+        after: [
+          "Contact details",
           {
-            icon: "/images/icons/benefit-1.svg",
-            title: "Laundry-Specific Focus",
-            description: "We understand how to attract walk-in customers and B2B clients in this industry.",
+            ul: [
+              "Office: 2, Jalan Hang Tuah, Bukit Bintang, City Centre, 55100 Kuala Lumpur",
+              [
+                "Phone and WhatsApp: +60 11-5888 8396 (",
+                { a: "chat on WhatsApp", href: "https://wa.me/601158888396" },
+                ")",
+              ],
+              "Hours: Monday to Saturday, 9:00 AM to 6:00 PM. Closed on Sundays and public holidays.",
+            ],
+          },
+        ],
+      },
+      {
+        type: "faq",
+        heading: "Frequently Asked Questions",
+        items: [
+          {
+            question: "1. How long does a laundromat setup take?",
+            answer: [
+              "It depends on how ready the site is and the scope of the project, so we give a realistic timeline after the site check. That check is the first stage of our ",
+              { a: "laundromat setup and installation process", href: "/services/laundromat-setup-and-installation-malaysia" },
+              ".",
+            ],
           },
           {
-            icon: "/images/icons/benefit-2.svg",
-            title: "Proven Playbooks",
-            description: "Our campaigns consistently increase machine utilization rates by 25–40%.",
+            question: "2. How much does it cost to set up a self-service laundromat?",
+            answer: [
+              "It depends on store size, machine capacity and the condition of the unit. The breakdown of ",
+              { a: "self-service laundry startup costs in Malaysia", href: "/how-much-does-it-cost-to-start-a-self-service-laundry-in-malaysia" },
+              " explains where the money goes, and a quote based on your floor plan gives you your own figure.",
+            ],
           },
           {
-            icon: "/images/icons/benefit-3.svg",
-            title: "Integrated Branding",
-            description: "From the logo on your store to the digital ads customers see, everything is cohesive and professional.",
+            question: "3. Which machine brands do you work with?",
+            answer: "Our team has experience with Speed Queen, Electrolux and LG Commercial, and we can recommend a mix that fits your site.",
           },
           {
-            icon: "/images/icons/benefit-4.svg",
-            title: "Tech-Enabled Growth",
-            description: "We align promotions with cashless systems, mobile apps, and loyalty QR codes.",
+            question: "4. Do you work outside Kuala Lumpur and Selangor?",
+            answer: "Yes. We support projects in Johor Bahru, Penang, Melaka, Sabah and Sarawak, with consultation, installation and after-sales support across Malaysia.",
           },
           {
-            icon: "/images/icons/benefit-1.svg",
-            title: "Competitive Differentiation",
-            description: "We make your laundromat look, feel, and operate differently from generic outlets.",
+            question: "5. What documents will I receive?",
+            answer: "A site feasibility report, a machine procurement and installation guide, utility and compliance documentation and a cashless system integration blueprint.",
           },
+          {
+            question: "6. What happens after the machines are installed?",
+            answer: [
+              "Everything is tested before opening and you receive handover notes. Most outlets then benefit from servicing every 4 to 12 weeks, which is where ",
+              { a: "commercial laundry machine maintenance and repair", href: "/services/commercial-laundry-machine-maintenance-repair-malaysia" },
+              " and ",
+              { a: "spare parts supply", href: "/services/commercial-laundry-spare-parts-malaysia" },
+              " keep downtime short.",
+            ],
+          },
+          {
+            question: "7. Can I ask about a franchise or investment?",
+            answer: [
+              "Yes. Choose Franchise or Investor on the enquiry form. If you’re weighing a franchise, the ",
+              { a: "questions to ask before signing a laundromat franchise agreement", href: "/questions-before-signing-laundromat-franchise-agreement-malaysia" },
+              " are worth settling first.",
+            ],
+          },
+        ],
+      },
+      {
+        type: "prose",
+        heading: "Plan Your Laundromat With Launch Laundry",
+        body: [
+          [
+            "Tell us your location, your floor plan and when you want to open, and our team will take it from there. ",
+            { a: "Get a quote based on your floor plan", href: "/contact-us" },
+            ", or ",
+            { a: "talk to a setup specialist on WhatsApp", href: "https://wa.me/601158888396" },
+            ".",
+          ],
         ],
       },
     ],

@@ -55,6 +55,10 @@ DirectorySlash Off
   RewriteRule ^top-10-commercial-laundry-service-tools-parts-for-efficient-operations(-2)?/?$ /commercial-laundry-tools-parts-malaysia-2026 [R=301,L]
   RewriteRule ^electrolux-washer-spare-parts-maintenance-guide-for-long-lasting-performance/?$ /electrolux-laundry-equipment-price-malaysia-2026 [R=301,L]
 
+  # SEO-037: duplicate body text. Direction not confirmed yet — to flip it,
+  # swap the two slugs here and in ../redirects.js.
+  RewriteRule ^surpasses-expectations-with-latest-projects/?$ /celebrates-major-milestone-in-digital-services [R=301,L]
+
   # Sabah and Sarawak were never separate pages — one East Malaysia guide.
   RewriteRule ^location/melaka/?$ /location/laundromat-business-melaka-malaysia-2026 [R=301,L]
   RewriteRule ^location/(sabah-sarawak|sabah|sarawak)/?$ /location/laundromat-business-sabah-sarawak-2026 [R=301,L]

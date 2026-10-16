@@ -9,6 +9,7 @@ import ServiceCallout from "@/components/services/ServiceCallout";
 import ServiceTable from "@/components/services/ServiceTable";
 import PricingPackages from "@/components/services/PricingPackages";
 import FaqAccordion from "@/components/locations/FaqAccordion";
+import { inlineText } from "@/components/locations/RichBody";
 import JsonLd, { SITE_URL, breadcrumbSchema } from "@/components/seo/JsonLd";
 import { servicePages } from "@/data/services";
 
@@ -107,7 +108,7 @@ export default async function ServicePage({ params }) {
     mainEntity: faqBlock.items.map((item) => ({
       "@type": "Question",
       name: item.question,
-      acceptedAnswer: { "@type": "Answer", text: item.answer },
+      acceptedAnswer: { "@type": "Answer", text: inlineText(item.answer) },
     })),
   };
 

@@ -45,6 +45,14 @@ export const REDIRECTS = [
     destination: "/electrolux-laundry-equipment-price-malaysia-2026",
   },
 
+  // SEO-037: two posts with identical body text. Which one stays is not
+  // confirmed yet — to flip the direction, swap source and destination here
+  // and in the matching RewriteRule in public/.htaccess.
+  {
+    source: "/surpasses-expectations-with-latest-projects",
+    destination: "/celebrates-major-milestone-in-digital-services",
+  },
+
   // Sabah and Sarawak were never separate pages — one East Malaysia guide.
   {
     source: "/location/melaka",

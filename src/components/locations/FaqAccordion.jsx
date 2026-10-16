@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { useState } from "react";
+import { Inline } from "@/components/locations/RichBody";
 
 // Location pages pass `block`, service pages pass `section`; accept either.
 export default function FaqAccordion({ block, section, tinted, id = "faq" }) {
@@ -49,7 +50,7 @@ export default function FaqAccordion({ block, section, tinted, id = "faq" }) {
                 hidden={open !== i}
                 className="px-5 pb-5 text-sm leading-relaxed text-body"
               >
-                {item.answer}
+                <Inline content={item.answer} />
               </p>
             </div>
           ))}

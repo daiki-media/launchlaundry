@@ -1,20 +1,42 @@
 import Link from "next/link";
 
-// Inline runs: a plain string, or { b } for a bold keyword.
-function Inline({ content }) {
+const LINK_CLASS = "font-semibold text-brand underline underline-offset-2 hover:text-brand-dark";
+
+// Inline runs: a plain string, { b } for a bold keyword, or { a, href } for a
+// link. Internal paths go through next/link; anything absolute opens in a new tab.
+export function Inline({ content }) {
   if (typeof content === "string") return content;
   if (Array.isArray(content)) {
-    return content.map((part, i) =>
-      typeof part === "string" ? (
-        part
-      ) : (
+    return content.map((part, i) => {
+      if (typeof part === "string") return part;
+      if (part.href) {
+        return part.href.startsWith("/") ? (
+          <Link key={i} href={part.href} className={LINK_CLASS}>
+            {part.a}
+          </Link>
+        ) : (
+          <a key={i} href={part.href} target="_blank" rel="noopener noreferrer" className={LINK_CLASS}>
+            {part.a}
+          </a>
+        );
+      }
+      return (
         <strong key={i} className="font-semibold text-navy">
           {part.b}
         </strong>
-      )
-    );
+      );
+    });
   }
   return null;
+}
+
+/** The same runs as plain text, for structured data. */
+export function inlineText(content) {
+  if (typeof content === "string") return content;
+  if (Array.isArray(content)) {
+    return content.map((part) => (typeof part === "string" ? part : part.a ?? part.b)).join("");
+  }
+  return "";
 }
 
 // A list item is a string, an inline array, or { b, t } for a bold lead-in label.
@@ -96,10 +118,7 @@ export default function RichBody({ body, className = "" }) {
           return (
             <p key={i} className="pt-1 text-sm text-body">
               {block.note}
-              <Link
-                href={block.link.href}
-                className="font-semibold text-brand underline underline-offset-2 hover:text-brand-dark"
-              >
+              <Link href={block.link.href} className={LINK_CLASS}>
                 {block.link.label}
               </Link>
             </p>
