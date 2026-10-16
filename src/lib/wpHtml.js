@@ -9,6 +9,9 @@
 
 import CONTENT_IMAGES from "../data/contentImages.json";
 
+// Mirrors CMS_ORIGIN in src/lib/blog.js: uploads sit at the CMS root, not /api.
+const CMS_ORIGIN = "https://cms.launchlaundry.com.my";
+
 const NAMED_ENTITIES = {
   amp: "&",
   lt: "<",
@@ -131,8 +134,12 @@ export function internalPath(href) {
  * Nothing has ever been served there, so every one of them was a 404.
  *
  * The files now live in public/blogs/content-images, re-encoded as WebP, with
- * their intrinsic sizes recorded in src/data/contentImages.json. Returns null
- * for anything not in that set, so an unrecognised src is left alone.
+ * their intrinsic sizes recorded in src/data/contentImages.json.
+ *
+ * Images uploaded through the CMS after that migration are not in the set, but
+ * the CMS serves them from the same path on its own origin. Point those at the
+ * CMS (no size known) and scripts/bundle-cms-images.mjs pulls them into the
+ * export after the build, like every other CMS image.
  */
 export function localContentImage(src) {
   const name = String(src || "").match(/(?:^|\/)blogs\/content-images\/([^/?#]+)$/i)?.[1];
@@ -146,7 +153,9 @@ export function localContentImage(src) {
   }
   const webp = file.replace(/\.(?:png|jpe?g|webp)$/i, ".webp");
   const size = CONTENT_IMAGES[webp];
-  return size ? { src: `/blogs/content-images/${webp}`, ...size } : null;
+  return size
+    ? { src: `/blogs/content-images/${webp}`, ...size }
+    : { src: `${CMS_ORIGIN}/blogs/content-images/${name}` };
 }
 
 /**
@@ -282,7 +291,7 @@ export function transformContent(html, resolvePath = (path) => path) {
     const local = localContentImage(next.match(/\bsrc="([^"]*)"/i)?.[1]);
     if (local) {
       next = next.replace(/\bsrc="[^"]*"/i, `src="${local.src}"`);
-      if (!/\bwidth=/i.test(next) && !/\bheight=/i.test(next)) {
+      if (local.width && !/\bwidth=/i.test(next) && !/\bheight=/i.test(next)) {
         next += ` width="${local.width}" height="${local.height}"`;
       }
     }
