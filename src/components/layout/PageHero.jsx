@@ -4,7 +4,7 @@ import Link from "next/link";
  * Breadcrumb banner used at the top of every inner page.
  * Soft mint → lavender wash, matching the original design.
  */
-export default function PageHero({ title, breadcrumb = [] }) {
+export default function PageHero({ title, intro, breadcrumb = [] }) {
   return (
     <section
       className="relative overflow-hidden"
@@ -41,6 +41,9 @@ export default function PageHero({ title, breadcrumb = [] }) {
         <h1 className="mt-3 text-3xl font-extrabold tracking-tight text-navy sm:text-4xl lg:text-[2.75rem]">
           {title}
         </h1>
+        {intro && (
+          <p className="mt-4 max-w-2xl text-sm leading-relaxed text-body sm:text-base">{intro}</p>
+        )}
       </div>
     </section>
   );

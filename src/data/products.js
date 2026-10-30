@@ -6,25 +6,164 @@
 // src/app/products/[slug]/page.js renders each section by its `type`, so adding
 // or reordering a section is a data change, not a layout change.
 
+// /products copy and metadata follow the client's brief 1:1: the page text
+// from "Commercial Laundry Equipment for Malaysian Businesses.docx", the meta
+// title and description from the SEO sheet. Rich runs use the RichBody shape
+// (src/components/locations/RichBody.jsx): { b } bold, { a, href } link.
 export const productsMeta = {
-  // Yoast on the live site stores this as "%%title%% Laundry Products & Equipment | Launch Laundry",
-  // where %%title%% resolves to the page title ("Products").
-  title: "Products Laundry Products & Equipment | Launch Laundry",
+  title: "Commercial Laundry Equipment Malaysia Washers Dryers and Ironers",
   description:
-    "Explore our laundry products and equipment, including washers, dryers, and spare parts, designed to optimize your laundry operations.",
+    "Browse commercial and industrial laundry equipment from Launch Laundry including tumble dryers flatwork ironers and washers. Get a quote for your laundry business",
 };
 
 export const pageHero = {
-  title: "Products",
+  title: "Commercial Laundry Equipment for Malaysian Businesses",
+  intro:
+    "Industrial washers, tumble dryers and flatwork ironers for laundromats, hotels and commercial laundries.",
   breadcrumb: [{ label: "Launch Laundry", href: "/" }, { label: "Products" }],
 };
 
 export const listing = {
-  badge: "What we offers",
-  title: "Explore Our Products",
-  description:
-    "By doing a financial analysis of these statements, you can see whether you have enough working capital.",
+  title: "Explore Our Laundry Equipment",
+  description: [
+    "Choosing the right laundry equipment depends on your daily load, the linen you process, and the space and utilities you have. Our range covers the three main stages of a commercial laundry: ",
+    { b: "washing" },
+    ", ",
+    { b: "drying" },
+    " and ",
+    { b: "finishing" },
+    ". Compare the machines below, or send us your requirements and we’ll recommend a setup for your business.",
+  ],
+  // Cards link to the product pages below by slug.
+  groups: [
+    {
+      title: "Washing",
+      items: [
+        {
+          slug: "w060f-w2110f-industrial-laundry-machines",
+          text: "Industrial laundry machines for growing businesses that need dependable, higher-volume washing. A good fit when your current machines can no longer keep up with daily demand.",
+        },
+        {
+          slug: "wales-series-professional-laundry-equipment",
+          text: "A professional equipment series for businesses building or upgrading a laundry operation. Ask us which models suit your volume and layout.",
+        },
+      ],
+    },
+    {
+      title: "Drying",
+      items: [
+        {
+          slug: "laundrymate-commercial-tumble-dryer",
+          text: "A high-performance tumble dryer for professional laundry businesses. Drying is often the bottleneck in a laundry, so we recommend sizing it together with your washers.",
+        },
+      ],
+    },
+    {
+      title: "Finishing",
+      items: [
+        {
+          slug: "laundrymate-yzd-series-flatwork-ironer",
+          text: "A commercial flatwork ironer for laundries and hotels pressing bed linen, tablecloths and other flat items quickly and neatly.",
+        },
+      ],
+    },
+  ],
+  cardLabel: "View details",
 };
+
+// The sections below the product cards, in the shape the service-page
+// renderers take (ServiceProse, ServiceTable).
+export const listingSections = [
+  {
+    type: "prose",
+    heading: "How to Choose the Right Equipment",
+    body: [
+      {
+        ul: [
+          {
+            b: "Daily volume:",
+            t: " estimate the kilograms of laundry you process per day, then size washers and dryers for your busiest day, not your average.",
+          },
+          {
+            b: "Type of linen:",
+            t: " hotel sheets and towels, restaurant linen, uniforms and everyday clothing each call for different machines and finishing.",
+          },
+          {
+            b: "Space and utilities:",
+            t: " check floor area, water supply, drainage, power and ventilation before you buy.",
+          },
+          {
+            b: "A balanced line-up:",
+            t: " washers, dryers and ironers should be sized together so no single stage slows down the others.",
+          },
+          {
+            b: "Growth plans:",
+            t: " if you expect volume to rise, choose a setup you can expand rather than one you will outgrow in a year.",
+          },
+        ],
+      },
+    ],
+  },
+  {
+    type: "table",
+    heading: "Which Equipment Suits Your Business?",
+    columns: ["Your business", "Where to start"],
+    rows: [
+      ["Self-service laundromat", "Industrial washers and tumble dryers"],
+      ["Hotel or resort", "Washers, tumble dryers and a flatwork ironer for bed linen"],
+      ["Commercial or industrial laundry", "A full line-up of washing, drying and finishing"],
+      ["Starting a new laundry", "Talk to us first. We can plan equipment with your setup and costs."],
+    ],
+  },
+  {
+    // Shown as the brief writes it: a bold question, then its answer. The page
+    // carries no FAQPage schema.
+    type: "prose",
+    heading: "Frequently Asked Questions",
+    body: [
+      [
+        { b: "How do I know what size of washer or dryer I need?" },
+        " Start with how many kilograms of laundry you handle on your busiest day, then allow for growth. Send us your estimate and we’ll suggest a suitable size.",
+      ],
+      [
+        { b: "Do I need a flatwork ironer?" },
+        " If you press flat items such as bed sheets, tablecloths and napkins in volume, yes. It is much faster than hand pressing and gives a more even finish. Laundromats that only wash and dry usually don’t need one.",
+      ],
+      [
+        { b: "Can I buy just one machine, or do I need a full line-up?" },
+        " Both are possible. Many customers add a single dryer or ironer to an existing line. If you’re starting from scratch, planning washers, dryers and finishing together avoids bottlenecks.",
+      ],
+      [
+        { b: "How much does commercial laundry equipment cost?" },
+        " Price depends on the model, size and configuration. Contact us with your requirements and we’ll send a quote.",
+      ],
+      [
+        { b: "Do you supply equipment across Malaysia?" },
+        " We work with laundry businesses across Malaysia. Contact us with your location to confirm delivery, installation and support for the model you want.",
+      ],
+      [
+        { b: "Can you help me plan a new laundromat, not just supply machines?" },
+        " Yes. Alongside equipment, we offer ",
+        { a: "Self-Service Laundromat Setup", href: "/service" },
+        " and ",
+        { a: "Business Consultancy for Laundromat Investors", href: "/service" },
+        ".",
+      ],
+    ],
+  },
+  {
+    type: "prose",
+    heading: "Get a Quote for Your Laundry Equipment",
+    body: [
+      "Tell us your daily volume and the type of business you run, and we’ll suggest an equipment line-up.",
+      [
+        { a: "Get a Quote", href: "/contact-us" },
+        " | ",
+        { a: "WhatsApp +60 11-5888 8396", href: "https://wa.me/601158888396" },
+      ],
+    ],
+  },
+];
 
 // Order matches the live site.
 export const products = [
