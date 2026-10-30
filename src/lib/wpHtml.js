@@ -334,6 +334,30 @@ const FAQ_HEADING =
 /** "1.", "Q:", "Q1)" and the bullets the editors number their questions with. */
 const QUESTION_LABEL = /^(?:q\s*\d*\s*[:.)\-]|\d+\s*[:.)]|[-–—•*])\s*/i;
 
+/** The same labels minus the bullets: what marks a plain paragraph as a numbered question. */
+const NUMBERED_QUESTION = /^(?:q\s*\d*\s*[:.)\-]|\d+\s*[:.)])\s*/i;
+
+/** Where a link goes to start a conversation rather than to read more. */
+const CONTACT_HREF = /href="(?:https?:\/\/(?:www\.)?launchlaundry\.com\.my)?\/contact-us\b|href="(?:https?:\/\/)?(?:wa\.me|api\.whatsapp\.com)\/|href="tel:/i;
+
+/**
+ * A block that is nothing but contact links — "Get a Free Budget Check or Chat
+ * with us on WhatsApp". That is the button row of a call to action; a real
+ * answer that mentions getting in touch says so in a sentence around the link.
+ */
+function isContactLine(html) {
+  if (!CONTACT_HREF.test(html)) return false;
+  const rest = stripTags(html.replace(/<a\b[^>]*>[\s\S]*?<\/a>/gi, " "));
+  return rest.replace(/[\s|•·,.\-–—/]+|\bor\b|\band\b/gi, "") === "";
+}
+
+/**
+ * How a real question opens. A call to action dressed as one opens otherwise:
+ * "Ready to…?", "Not Sure Which…?", "Planning Your…?", "Need…?".
+ */
+const INTERROGATIVE =
+  /^(?:what|how|why|when|where|who|whom|whose|which|can|could|do|does|did|is|are|was|were|am|should|shall|will|would|has|have|had|may|might|must)\b/i;
+
 const QUESTION_WORD =
   /^(?:what|how|why|when|where|who|which|can|do|does|is|are|should|will)\b/i;
 
@@ -354,11 +378,14 @@ function faqBlocks(html) {
 
   const blocks = [];
   let level = 0;
+  let heading = 0;
   let cursor = 0;
   let buffer = "";
 
+  // `heading` numbers each heading, so the chunks of one heading (a <br> splits
+  // them) can be told apart from the next heading at the same level.
   const flush = () => {
-    if (buffer.trim()) blocks.push({ level, html: buffer });
+    if (buffer.trim()) blocks.push({ level, heading: level ? heading : 0, html: buffer });
     buffer = "";
   };
 
@@ -368,12 +395,35 @@ function faqBlocks(html) {
     flush();
 
     const tag = match[2]?.toLowerCase();
-    if (tag && /^h[1-6]$/.test(tag)) level = match[1] === "/" ? 0 : Number(tag[1]);
+    if (tag && /^h[1-6]$/.test(tag)) {
+      level = match[1] === "/" ? 0 : Number(tag[1]);
+      if (level) heading += 1;
+    }
   }
   buffer += html.slice(cursor);
   flush();
 
   return blocks;
+}
+
+/**
+ * Trim a labelled FAQ section to the section itself: it ends at the next
+ * heading at the label's level or above, as any document section does. The
+ * one exception is a post whose questions are themselves headings at that
+ * level, which shows as the label being followed straight away by one.
+ */
+function faqSection(blocks) {
+  const label = blocks[0];
+  if (!label?.level) return blocks;
+
+  const first = blocks.findIndex((block) => block.heading !== label.heading);
+  if (first < 0) return blocks;
+  if (blocks[first].level && blocks[first].level <= label.level) return blocks;
+
+  const end = blocks.findIndex(
+    (block, i) => i > first && block.level && block.level <= label.level
+  );
+  return end < 0 ? blocks : blocks.slice(0, end);
 }
 
 /**
@@ -397,7 +447,7 @@ export function extractFaqs(html) {
   const source = String(html);
   const sectionAt = source.search(FAQ_HEADING);
   const labelled = sectionAt >= 0;
-  const blocks = faqBlocks(labelled ? source.slice(sectionAt) : source);
+  const blocks = labelled ? faqSection(faqBlocks(source.slice(sectionAt))) : faqBlocks(source);
 
   const textOf = (fragment) => stripTags(fragment).replace(QUESTION_LABEL, "").trim();
 
@@ -425,6 +475,16 @@ export function extractFaqs(html) {
       if (isQuestion(question)) return { question, trailing: "" };
     }
 
+    // Inside a labelled section a plain paragraph is a question too when it is
+    // numbered and ends in a question mark: "1. What is the largest cost…?"
+    if (labelled && !block.level) {
+      const raw = stripTags(block.html);
+      const question = textOf(block.html);
+      if (NUMBERED_QUESTION.test(raw) && /\?$/.test(question) && isQuestion(question)) {
+        return { question, trailing: "" };
+      }
+    }
+
     return null;
   };
 
@@ -438,18 +498,20 @@ export function extractFaqs(html) {
     // everything up to the next question or the next heading.
     const parts = [];
     let end = i + 1;
+    let pitch = false;
     if (asked.trailing) {
       parts.push(asked.trailing);
     } else {
       while (end < blocks.length && !blocks[end].level && !asQuestion(blocks[end])) {
         parts.push(stripTags(blocks[end].html));
+        pitch ||= !INTERROGATIVE.test(asked.question) && isContactLine(blocks[end].html);
         end += 1;
       }
     }
 
     const answer = clamp(parts.filter(Boolean).join(" "), 900);
     if (answer.length < 25) return;
-    candidates.push({ question: asked.question, answer, at: i, end });
+    candidates.push({ question: asked.question, answer, at: i, end, pitch });
   });
 
   // Group the pairs that sit back to back — each question starting where the
@@ -464,7 +526,12 @@ export function extractFaqs(html) {
     while (j < candidates.length && candidates[j - 1].end === candidates[j].at) j += 1;
 
     if (labelled || j - i >= MIN_UNLABELLED_RUN) {
-      for (const { question, answer } of candidates.slice(i, j)) {
+      for (const { question, answer, pitch } of candidates.slice(i, j)) {
+        // A "question" that is not phrased as one and is answered with a
+        // contact button row is a call to action.
+        // It still counts towards the run above, so no real pair around it is
+        // dropped with it.
+        if (pitch) continue;
         const key = question.toLowerCase();
         if (seen.has(key)) continue;
         seen.add(key);
